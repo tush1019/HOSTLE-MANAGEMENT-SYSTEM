@@ -1,21 +1,8 @@
-const express = require("express");
-const cors = require("cors");
-require("dotenv").config();
+/* Compatibility entrypoint.
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "Hostel Management Backend is running 🚀",
-  });
-});
-
-const PORT = 5000;
-
-app.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
-});
+   Render's original Root Directory for this service points at this folder,
+   so instead of the old dummy server we run the REAL HostelHub backend from
+   ../hostel-management-system/backend. That backend reads PORT from the
+   environment (Render provides it) and falls back to SQLite when MySQL is
+   unavailable. */
+require("../hostel-management-system/backend/server");
