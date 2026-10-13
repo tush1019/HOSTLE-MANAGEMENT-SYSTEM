@@ -18,7 +18,17 @@ if (savedTheme === "dark") {
   document.documentElement.setAttribute("data-theme", "dark");
 }
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+/* Guard against missing DOM root element - prevents headless/minimal-DOM crash */
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  console.error(
+    "[HOSTEL-HUB] UI startup failed: #root element not found. " +
+    "The app cannot mount without a DOM root."
+  );
+  throw new Error("HostelHub: Missing #root element in DOM.");
+}
+
+ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <ToastProvider>
       <App />

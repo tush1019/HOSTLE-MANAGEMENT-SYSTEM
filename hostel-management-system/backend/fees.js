@@ -28,15 +28,16 @@ router.get("/", async (req, res) => {
     const [rows] = await db.query(sql, params);
 
     // Summary numbers for the cards
-    const [[summary]] = await db.query(`
+    const [summaryRows] = await db.query(`
       SELECT
         COUNT(*) AS total,
-        SUM(CASE WHEN status = 'Paid' THEN amount ELSE 0 END) AS paidAmount,
-        SUM(CASE WHEN status = 'Pending' THEN amount ELSE 0 END) AS pendingAmount,
-        SUM(CASE WHEN status = 'Paid' THEN 1 ELSE 0 END) AS paidCount,
-        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) AS pendingCount
+        COALESCE(SUM(CASE WHEN status = 'Paid' THEN amount ELSE 0 END), 0) AS paidAmount,
+        COALESCE(SUM(CASE WHEN status = 'Pending' THEN amount ELSE 0 END), 0) AS pendingAmount,
+        COALESCE(SUM(CASE WHEN status = 'Paid' THEN 1 ELSE 0 END), 0) AS paidCount,
+        COALESCE(SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END), 0) AS pendingCount
       FROM fees
     `);
+    const summary = summaryRows[0] || {};
 
     res.json({ success: true, data: rows, summary });
   } catch (error) {

@@ -1,12 +1,13 @@
-import { useState, type FormEvent } from "react";
+﻿import { useState, type FormEvent } from "react";
 import {
   Building2, UserRound, Mail, Lock, UserPlus,
   CheckCircle2, ArrowLeft, Eye, EyeOff,
+  KeyRound
 } from "lucide-react";
 import { API_BASE_URL } from "../lib/api";
 
 type SignupProps = { onSignup: () => void; onLogin: () => void; onBackHome: () => void };
-type Step = "details" | "success";
+type Step = "details" | "otp" | "success";
 type Role = "Admin" | "Student";
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
@@ -47,12 +48,26 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [createdName, setCreatedName] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpError, setOtpError] = useState("");
   const strength = strengthOf(password);
+
+  /* Guard: validate OTP is exactly 6 digits before comparing with backend */
+  function validateOtpInput(value: string): boolean {
+    const isValid = /^\d{6}$/.test(value);
+    if (!isValid) {
+      setOtpError("Enter a valid 6-digit code.");
+    } else {
+      setOtpError("");
+    }
+    return isValid;
+  }
 
   const signup = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
     setInfo("");
+    setOtpError("");
     if (name.trim().length < 2) { setError("Please enter your full name."); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError("Please enter a valid email address."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters long."); return; }
@@ -72,6 +87,30 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
       setLoading(false);
     }
   };
+
+  const verifyOtp = async (e: FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setInfo("");
+    if (!validateOtpInput(otp)) {
+      setError(otpError || "Invalid OTP.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await postJson<{ message: string; user: { name: string; role: string } }>(
+        `${API_BASE_URL}/auth/verify`,
+        { email: email.trim(), otp }
+      );
+      setCreatedName(data.user?.name || email.trim());
+      setInfo(data.message);
+      setStep("success");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid OTP or rate limit exceeded.");
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div className="signup-page">
       <div className="signup-left">
@@ -81,7 +120,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
         </div>
         <div className="signup-welcome">
           <h2>Join HostelHub<br />in seconds.</h2>
-          <p>Create your account with a secure password — fast and free for every resident.</p>
+          <p>Create your account with a secure password â€” fast and free for every resident.</p>
           <div className="signup-features">
             <div><CheckCircle2 size={16} /> Secure password signup</div>
             <div><CheckCircle2 size={16} /> Role-based dashboards</div>
@@ -171,10 +210,66 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
               </button>
             </form>
           )}
+
+          {step === "otp" && (
+            <form onSubmit={(e) => { e.preventDefault(); verifyOtp(e); }}>
+              <div>
+                <label style={{ display: "block", marginBottom: 10, fontWeight: 600, color: "#1e293b" }}>
+                  Enter 6-digit OTP
+                </label>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {Array.from({ length: 6 }, (_, i) => (
+                    <input
+                      key={i}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={otp[i] || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^\d$/.test(val)) {
+                          const next = otp;
+                          const arr = next.split("");
+                          arr[i] = val;
+                          setOtp(arr.join(""));
+                          if (i < 5) {
+                            const inputs = document.querySelectorAll<HTMLInputElement>('#otp-inputs input');
+                            if (inputs[i + 1]) (inputs[i + 1] as HTMLInputElement).focus();
+                          }
+                        }
+                      }}
+                      id="otp-inputs"
+                      style={{
+                        width: "48px", height: "48px", textAlign: "center",
+                        fontSize: "18px", border: "2px solid #e2e8f0",
+                        borderRadius: "8px", outline: "none", fontFamily: "monospace"
+                      }}
+                      aria-label={`OTP ${i + 1}`}
+                    />
+                  ))}
+                </div>
+                <div style={{ marginTop: 8, fontSize: "12px", color: "#64748b" }}>
+                  <KeyRound size={14} style={{ marginRight: 4, verticalAlign: "middle" }} />
+                  Enter the 6-digit code sent to your email
+                </div>
+              </div>
+              {otpError && <div style={{ color: "#ef4444", fontSize: "13px", marginBottom: 8 }}>{otpError}</div>}
+              {error && <div style={{ color: "#ef4444", fontSize: "13px", marginBottom: 8 }}>{error}</div>}
+              {info && <div style={{ color: "#10b981", fontSize: "13px", marginBottom: 8 }}>{info}</div>}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button type="button" className="signup-button" onClick={() => { setOtp(""); setStep("details"); }}>
+                  Back
+                </button>
+                <button type="submit" className="signup-button" disabled={loading} style={{ flex: 1 }}>
+                  {loading ? "Verifying..." : "Verify & Continue"}
+                </button>
+              </div>
+            </form>
+          )}
           {step === "success" && (
             <div className="signup-success-card">
               <div className="success-circle"><CheckCircle2 size={44} /></div>
-              <h2>Welcome, {createdName}! 🎉</h2>
+              <h2>Welcome, {createdName}! ðŸŽ‰</h2>
               <p>{info || "Account created successfully."}</p>
               <div className="success-user">
                 <strong>{createdName}</strong>
@@ -185,7 +280,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
                   Continue to Login <ArrowLeft size={16} style={{ transform: "rotate(180deg)" }} />
                 </button>
               </div>
-              <p className="success-loading">Redirecting you to login…</p>
+              <p className="success-loading">Redirecting you to loginâ€¦</p>
             </div>
           )}
 

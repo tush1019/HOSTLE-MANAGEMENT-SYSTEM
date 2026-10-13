@@ -7,15 +7,23 @@ let mysqlPool = null;
 let sqliteDb = null;
 let sqliteReady = false;
 
+function monthNameSql(expr) {
+  return `CASE CAST(strftime('%m', ${expr}) AS INTEGER)
+    WHEN 1 THEN 'Jan' WHEN 2 THEN 'Feb' WHEN 3 THEN 'Mar' WHEN 4 THEN 'Apr'
+    WHEN 5 THEN 'May' WHEN 6 THEN 'Jun' WHEN 7 THEN 'Jul' WHEN 8 THEN 'Aug'
+    WHEN 9 THEN 'Sep' WHEN 10 THEN 'Oct' WHEN 11 THEN 'Nov' WHEN 12 THEN 'Dec'
+    ELSE 'N/A' END`;
+}
+
 function normalizeSQLiteQuery(sql) {
   let normalized = String(sql || "");
 
-  normalized = normalized.replace(/DATE_FORMAT\(([^,]+),\s*'%d %b %Y'\)/g, "strftime('%d %b %Y', $1)");
-  normalized = normalized.replace(/DATE_FORMAT\(([^,]+),\s*'%b'\)/g, "strftime('%b', $1)");
-  normalized = normalized.replace(/DATE_FORMAT\(([^,]+),\s*'%Y-%m'\)/g, "strftime('%Y-%m', $1)");
-  normalized = normalized.replace(/DATE_FORMAT\(([^,]+),\s*'%Y-%m-%d'\)/g, "strftime('%Y-%m-%d', $1)");
+  normalized = normalized.replace(/DATE_FORMAT\(([^,]+),\s*'%d %b %Y'\)/g, (_, expr) => `strftime('%d', ${expr}) || ' ' || ${monthNameSql(expr)} || ' ' || strftime('%Y', ${expr})`);
+  normalized = normalized.replace(/DATE_FORMAT\(([^,]+),\s*'%b'\)/g, (_, expr) => monthNameSql(expr));
+  normalized = normalized.replace(/DATE_FORMAT\(([^,]+),\s*'%Y-%m'\)/g, (_, expr) => `strftime('%Y', ${expr}) || '-' || printf('%02d', CAST(strftime('%m', ${expr}) AS INTEGER))`);
+  normalized = normalized.replace(/DATE_FORMAT\(([^,]+),\s*'%Y-%m-%d'\)/g, (_, expr) => `strftime('%Y-%m-%d', ${expr})`);
+  normalized = normalized.replace(/DATE_SUB\(CURDATE\(\),\s*INTERVAL\s+6\s+MONTH\)/gi, "date('now', '-6 months')");
   normalized = normalized.replace(/CURDATE\(\)/g, "date('now')");
-  normalized = normalized.replace(/DATE_SUB\(CURDATE\(\), INTERVAL 6 MONTH\)/g, "date('now', '-6 months')");
   normalized = normalized.replace(
     /ORDER BY FIELD\(day, 'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'\)/g,
     "ORDER BY CASE day WHEN 'Monday' THEN 0 WHEN 'Tuesday' THEN 1 WHEN 'Wednesday' THEN 2 WHEN 'Thursday' THEN 3 WHEN 'Friday' THEN 4 WHEN 'Saturday' THEN 5 WHEN 'Sunday' THEN 6 ELSE 99 END"

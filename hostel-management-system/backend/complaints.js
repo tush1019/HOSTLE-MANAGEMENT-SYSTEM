@@ -28,14 +28,15 @@ router.get("/", async (req, res) => {
 
     const [rows] = await db.query(sql, params);
 
-    const [[summary]] = await db.query(`
+    const [summaryRows] = await db.query(`
       SELECT
         COUNT(*) AS total,
-        SUM(status = 'Pending') AS pending,
-        SUM(status = 'In Progress') AS inProgress,
-        SUM(status = 'Resolved') AS resolved
+        COALESCE(SUM(status = 'Pending'), 0) AS pending,
+        COALESCE(SUM(status = 'In Progress'), 0) AS inProgress,
+        COALESCE(SUM(status = 'Resolved'), 0) AS resolved
       FROM complaints
     `);
+    const summary = summaryRows[0] || {};
 
     res.json({ success: true, data: rows, summary });
   } catch (error) {

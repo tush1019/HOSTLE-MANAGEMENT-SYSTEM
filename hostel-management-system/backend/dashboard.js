@@ -6,13 +6,14 @@ const router = express.Router();
 /* GET /api/dashboard — live counts for the dashboard & reports pages */
 router.get("/", async (req, res) => {
   try {
-    const [[students]] = await db.query(`
+    const [studentsRows] = await db.query(`
       SELECT COUNT(*) AS total,
              SUM(status = 'Active') AS active
       FROM students
     `);
+    const students = studentsRows[0] || { total: 0, active: 0 };
 
-    const [[rooms]] = await db.query(`
+    const [roomsRows] = await db.query(`
       SELECT COUNT(*) AS total,
              SUM(status = 'Occupied') AS occupied,
              SUM(status = 'Available') AS available,
@@ -21,22 +22,25 @@ router.get("/", async (req, res) => {
              COALESCE(SUM(occupied), 0) AS bedsFilled
       FROM rooms
     `);
+    const rooms = roomsRows[0] || { total: 0, occupied: 0, available: 0, maintenance: 0, beds: 0, bedsFilled: 0 };
 
-    const [[fees]] = await db.query(`
+    const [feesRows] = await db.query(`
       SELECT COALESCE(SUM(CASE WHEN status = 'Paid' THEN amount ELSE 0 END), 0) AS paid,
              COALESCE(SUM(CASE WHEN status = 'Pending' THEN amount ELSE 0 END), 0) AS pending,
              SUM(status = 'Paid') AS paidCount,
              SUM(status = 'Pending') AS pendingCount
       FROM fees
     `);
+    const fees = feesRows[0] || { paid: 0, pending: 0, paidCount: 0, pendingCount: 0 };
 
-    const [[complaints]] = await db.query(`
+    const [complaintsRows] = await db.query(`
       SELECT COUNT(*) AS total,
              SUM(status = 'Pending') AS pending,
              SUM(status = 'In Progress') AS inProgress,
              SUM(status = 'Resolved') AS resolved
       FROM complaints
     `);
+    const complaints = complaintsRows[0] || { total: 0, pending: 0, inProgress: 0, resolved: 0 };
 
     const [monthlyFees] = await db.query(`
       SELECT DATE_FORMAT(payment_date, '%b') AS month,
