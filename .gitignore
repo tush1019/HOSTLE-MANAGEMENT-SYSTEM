@@ -9,3 +9,6 @@ backend.log
 frontend.log
 frontend-err.log
 backend-err.log
+__pycache__/
+.pytest_cache/
+*.pyc
