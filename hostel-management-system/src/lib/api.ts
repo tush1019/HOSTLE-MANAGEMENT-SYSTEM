@@ -1,6 +1,10 @@
 /* Shared API helper — all backend calls go through here. */
 
-export const API_BASE_URL = "http://localhost:5000/api";
+export const API_BASE_URL =
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== "undefined" && window.location.hostname !== "localhost"
+    ? "https://hostle-management-system.onrender.com/api"
+    : "http://localhost:5000/api");
 
 type ApiOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
