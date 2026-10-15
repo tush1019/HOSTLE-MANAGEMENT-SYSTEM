@@ -91,6 +91,19 @@ async function createSqliteFallback() {
       capacity INTEGER NOT NULL DEFAULT 2,
       occupied INTEGER NOT NULL DEFAULT 0,
       status TEXT NOT NULL DEFAULT 'Available' CHECK (status IN ('Available', 'Occupied', 'Maintenance')),
+      wing TEXT NOT NULL DEFAULT 'Boys' CHECK (wing IN ('Boys', 'Girls')),
+      category TEXT NOT NULL DEFAULT 'Standard' CHECK (category IN ('Standard', 'Premium', 'Deluxe')),
+      washroom TEXT NOT NULL DEFAULT 'Common' CHECK (washroom IN ('Attached', 'Common')),
+      amenities TEXT,
+      monthly_rent REAL NOT NULL DEFAULT 0,
+      photo TEXT,
+      -- Premium upgrade fields
+      photo_gallery TEXT,
+      toilet_condition TEXT,
+      cleaning_status TEXT,
+      ground_sports_status TEXT,
+      shafts_status TEXT,
+      safety_notes TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
@@ -102,9 +115,28 @@ async function createSqliteFallback() {
       student_name TEXT NOT NULL,
       room_number TEXT NULL,
       amount REAL NOT NULL,
+      room_charge REAL NOT NULL DEFAULT 0,
+      electricity_charge REAL NOT NULL DEFAULT 0,
+      food_charge REAL NOT NULL DEFAULT 0,
+      cleaning_charge REAL NOT NULL DEFAULT 0,
+      other_charge REAL NOT NULL DEFAULT 0,
       payment_date DATE NOT NULL,
       method TEXT NOT NULL DEFAULT 'UPI' CHECK (method IN ('UPI', 'Cash', 'Card', 'Bank Transfer')),
       status TEXT NOT NULL DEFAULT 'Paid' CHECK (status IN ('Paid', 'Pending')),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  /* Hostel facilities & services (Warden, Kitchen, Cleaning, Ground, Charges ...) */
+  db.run(`
+    CREATE TABLE IF NOT EXISTS facilities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category TEXT NOT NULL DEFAULT 'General' CHECK (category IN ('Warden', 'Mess & Kitchen', 'Cleaning', 'Ground & Sports', 'Charges & Billing', 'Safety & Rules', 'General')),
+      title TEXT NOT NULL,
+      details TEXT NULL,
+      contact_name TEXT NULL,
+      contact_phone TEXT NULL,
+      status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive')),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
   `);
@@ -146,15 +178,29 @@ async function createSqliteFallback() {
   `);
 
   db.run(`
-    INSERT OR IGNORE INTO rooms (room_number, floor, type, capacity, occupied, status) VALUES
-      ('101', 'Ground Floor', '2 Seater', 2, 2, 'Occupied'),
-      ('102', 'Ground Floor', '3 Seater', 3, 2, 'Available'),
-      ('103', 'Ground Floor', '2 Seater', 2, 0, 'Available'),
-      ('201', 'First Floor', '3 Seater', 3, 3, 'Occupied'),
-      ('202', 'First Floor', '2 Seater', 2, 1, 'Available'),
-      ('203', 'First Floor', '2 Seater', 2, 2, 'Occupied'),
-      ('301', 'Second Floor', '3 Seater', 3, 0, 'Maintenance'),
-      ('302', 'Second Floor', '2 Seater', 2, 1, 'Available');
+    INSERT OR IGNORE INTO rooms (room_number, floor, type, capacity, occupied, status, wing, category, washroom, amenities, monthly_rent, photo) VALUES
+      ('101', 'Ground Floor', '2 Seater', 2, 2, 'Occupied', 'Boys', 'Standard', 'Common', 'Bed, Study Table, Fan, Cupboard', 4500, '/rooms/boys-room.svg'),
+      ('102', 'Ground Floor', '3 Seater', 3, 2, 'Available', 'Boys', 'Standard', 'Common', 'Bed, Study Table, Fan, Cupboard', 3500, '/rooms/boys-room.svg'),
+      ('103', 'Ground Floor', '2 Seater', 2, 0, 'Available', 'Girls', 'Standard', 'Common', 'Bed, Study Table, Fan, Cupboard', 4500, '/rooms/girls-room.svg'),
+      ('104', 'Ground Floor', '1 Seater', 1, 0, 'Available', 'Girls', 'Premium', 'Attached', 'Single Bed, Study Table, AC, Wardrobe, Attached Washroom', 9000, '/rooms/premium-room.svg'),
+      ('201', 'First Floor', '3 Seater', 3, 3, 'Occupied', 'Boys', 'Standard', 'Common', 'Bed, Study Table, Fan, Cupboard', 3500, '/rooms/boys-room.svg'),
+      ('202', 'First Floor', '2 Seater', 2, 1, 'Available', 'Girls', 'Standard', 'Attached', 'Bed, Study Table, Cooler, Attached Washroom', 5500, '/rooms/girls-room.svg'),
+      ('203', 'First Floor', '2 Seater', 2, 2, 'Occupied', 'Girls', 'Premium', 'Attached', 'Bed, Study Table, AC, Wardrobe, Attached Washroom', 8000, '/rooms/girls-room.svg'),
+      ('301', 'Second Floor', '3 Seater', 3, 0, 'Maintenance', 'Boys', 'Standard', 'Common', 'Bed, Study Table, Fan, Cupboard', 3500, '/rooms/boys-room.svg'),
+      ('302', 'Second Floor', '2 Seater', 2, 1, 'Available', 'Boys', 'Deluxe', 'Attached', 'Bed, Study Table, AC, Fridge, Attached Washroom', 7500, '/rooms/boys-room.svg'),
+      ('401', 'Second Floor', '1 Seater', 1, 1, 'Occupied', 'Girls', 'Deluxe', 'Attached', 'Single Bed, Study Table, AC, Fridge, Wardrobe, Attached Washroom', 10000, '/rooms/premium-room.svg');
+  `);
+
+  db.run(`
+    INSERT OR IGNORE INTO facilities (category, title, details, contact_name, contact_phone, status) VALUES
+      ('Warden', 'Boys Hostel Warden', 'Boys wing warden — room allotment, discipline & night attendance. Office hours 9 AM – 6 PM.', 'Mr. R. Singh', '9876501234', 'Active'),
+      ('Warden', 'Girls Hostel Warden', 'Girls wing warden — entry register, visitor approval & safety. Available on call 24x7.', 'Mrs. S. Sharma', '9876505678', 'Active'),
+      ('Mess & Kitchen', 'Mess Timings', 'Breakfast 7:30–9 AM, Lunch 12:30–2 PM, Snacks 5–6 PM, Dinner 7:30–9 PM. Sunday special thali.', 'Mess Manager', '9876501111', 'Active'),
+      ('Mess & Kitchen', 'Kitchen Hygiene Rules', 'FSSAI-followed kitchen: RO water, daily deep-clean, pest control every month. Complaints via Complaints page.', 'Head Cook', '9876502222', 'Active'),
+      ('Cleaning', 'Room Cleaning Schedule', 'Rooms cleaned Mon/Wed/Fri. Washrooms cleaned daily 7–9 AM. Deep cleaning every Sunday.', 'Cleaning Supervisor', '9876503333', 'Active'),
+      ('Ground & Sports', 'Playground & Sports', 'Cricket/football ground open 5–8 AM & 4–7 PM. Sports kit issued against ID card.', 'Sports In-charge', '9876504444', 'Active'),
+      ('Charges & Billing', 'Monthly Fee Structure', 'Standard ₹3500–4500, Premium ₹5500–8000, Deluxe ₹7500–10000. Electricity above 100 units extra. Food included.', 'Accounts Office', '9876505555', 'Active'),
+      ('Safety & Rules', 'Safety & Gate Rules', 'Gate closes 9:30 PM. CCTV monitored campus. Girls wing entry only with warden approval.', 'Security Head', '9876506666', 'Active');
   `);
 
   db.run(`
@@ -176,6 +222,35 @@ async function createSqliteFallback() {
   return db;
 }
 
+/* Add premium room columns to older MySQL databases (safe, runs once per boot). */
+async function ensurePremiumRoomColumns(pool) {
+  try {
+    const [rows] = await pool.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rooms'`
+    );
+    const have = new Set(
+      rows.map((r) => r.COLUMN_NAME || Object.values(r)[0]).map((v) => String(v).toLowerCase())
+    );
+    const missing = {
+      photo_gallery: "VARCHAR(2000) NULL",
+      toilet_condition: "TEXT NULL",
+      cleaning_status: "TEXT NULL",
+      ground_sports_status: "TEXT NULL",
+      shafts_status: "TEXT NULL",
+      safety_notes: "TEXT NULL",
+    };
+    for (const [name, def] of Object.entries(missing)) {
+      if (!have.has(name)) {
+        await pool.query(`ALTER TABLE rooms ADD COLUMN ${name} ${def}`);
+        console.log(`[db] Migrated: added rooms.${name}`);
+      }
+    }
+  } catch (error) {
+    console.warn("rooms column migration skipped:", error.message);
+  }
+}
+
 async function getPool() {
   if (mysqlPool) return mysqlPool;
 
@@ -192,6 +267,7 @@ async function getPool() {
 
   try {
     await mysqlPool.query("SELECT 1 AS connected");
+    await ensurePremiumRoomColumns(mysqlPool);
     return mysqlPool;
   } catch (error) {
     mysqlPool = null;

@@ -5,6 +5,7 @@ import {
   KeyRound
 } from "lucide-react";
 import { API_BASE_URL } from "../lib/api";
+import { ADMIN_PASSKEY } from "../lib/constants";
 
 type SignupProps = { onSignup: () => void; onLogin: () => void; onBackHome: () => void };
 type Step = "details" | "otp" | "success";
@@ -44,6 +45,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [passkey, setPasskey] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -72,6 +74,10 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError("Please enter a valid email address."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters long."); return; }
     if (password !== confirm) { setError("Passwords do not match."); return; }
+    if (role === "Admin" && passkey.trim() !== ADMIN_PASSKEY) {
+      setError("Incorrect admin passkey. Admin accounts require the valid 6-digit passkey.");
+      return;
+    }
     setLoading(true);
     try {
       const data = await postJson<{ message: string; user: { name: string } }>(
@@ -148,7 +154,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
                 key={r}
                 type="button"
                 className={role === r ? "role-active" : ""}
-                onClick={() => { setRole(r); setError(""); }}
+                onClick={() => { setRole(r); setError(""); setPasskey(""); }}
               >
                 <UserRound size={17} /> {r}
               </button>
@@ -195,6 +201,18 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
                     onChange={(e) => { setConfirm(e.target.value); setError(""); }} />
                 </div>
               </div>
+              {role === "Admin" && (
+                <div className="signup-field">
+                  <label>Admin Passkey</label>
+                  <div className="signup-input-wrapper">
+                    <KeyRound size={17} />
+                    <input type="password" inputMode="numeric" maxLength={6}
+                      placeholder="6-digit admin passkey" value={passkey} required
+                      autoComplete="off"
+                      onChange={(e) => { setPasskey(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }} />
+                  </div>
+                </div>
+              )}
               {password.length > 0 && (
                 <div style={{ margin: "-6px 0 14px", display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ flex: 1, height: 6, borderRadius: 3, background: "#e2e8f0", overflow: "hidden" }}>

@@ -9,6 +9,9 @@ type Fee = {
   id: number; paymentCode: string | null; student: string;
   room: string | null; amount: number | string; date: string;
   rawDate?: string; method: string; status: "Paid" | "Pending";
+  roomCharge: number | string; electricityCharge: number | string;
+  foodCharge: number | string; cleaningCharge: number | string;
+  otherCharge: number | string;
 };
 
 type FeeSummary = {
@@ -96,6 +99,14 @@ function Fees({ search, role }: { search: string; role: "Admin" | "Student" | nu
     ? rows.filter((f) =>
         [f.student, f.paymentCode || "", f.room || ""].join(" ").toLowerCase().includes(term))
     : rows;
+
+  const roomTotal = rows.reduce((s, f) => s + (Number(f.roomCharge) || 0), 0);
+  const electricityTotal = rows.reduce((s, f) => s + (Number(f.electricityCharge) || 0), 0);
+  const foodTotal = rows.reduce((s, f) => s + (Number(f.foodCharge) || 0), 0);
+  const cleaningTotal = rows.reduce((s, f) => s + (Number(f.cleaningCharge) || 0), 0);
+  const otherTotal = rows.reduce((s, f) => s + (Number(f.otherCharge) || 0), 0);
+  const totalCharges = roomTotal + electricityTotal + foodTotal + cleaningTotal + otherTotal;
+
   return (
     <section className="content">
       <div className="page-heading fees-heading">
@@ -194,7 +205,39 @@ function Fees({ search, role }: { search: string; role: "Admin" | "Student" | nu
           </div>
         )}
       </div>
-      {showModal && (
+
+      {/* Fee breakdown summary */}
+      <div className="fee-breakdown">
+    <div className="fee-breakdown-card">
+      <h3>Breakdown Summary</h3>
+      <div className="fee-breakdown-row">
+        <span className="fee-breakdown-label">Room</span>
+        <span className="fee-breakdown-value">{formatINR(roomTotal)}</span>
+      </div>
+      <div className="fee-breakdown-row">
+        <span className="fee-breakdown-label">Electricity</span>
+        <span className="fee-breakdown-value">{formatINR(electricityTotal)}</span>
+      </div>
+      <div className="fee-breakdown-row">
+        <span className="fee-breakdown-label">Food</span>
+        <span className="fee-breakdown-value">{formatINR(foodTotal)}</span>
+      </div>
+      <div className="fee-breakdown-row">
+        <span className="fee-breakdown-label">Cleaning</span>
+        <span className="fee-breakdown-value">{formatINR(cleaningTotal)}</span>
+      </div>
+      <div className="fee-breakdown-row">
+        <span className="fee-breakdown-label">Other</span>
+        <span className="fee-breakdown-value">{formatINR(otherTotal)}</span>
+      </div>
+      <div className="fee-breakdown-row total-row">
+        <span className="fee-breakdown-label">Total Charges</span>
+        <span className="fee-breakdown-value">{formatINR(totalCharges)}</span>
+      </div>
+    </div>
+  </div>
+
+  {showModal && (
         <Modal title="Record Payment" subtitle="Add a new fee payment" onClose={() => setShowModal(false)}>
           <div className="hub-form">
             <div className="hub-form-grid">

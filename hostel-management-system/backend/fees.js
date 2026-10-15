@@ -6,14 +6,25 @@ const router = express.Router();
 const VALID_METHODS = ["UPI", "Cash", "Card", "Bank Transfer"];
 const VALID_STATUS = ["Paid", "Pending"];
 
+function num(v) {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+const FEE_SELECT = `id, payment_code AS paymentCode, student_name AS student,
+                 room_number AS room, amount,
+                 room_charge AS roomCharge, electricity_charge AS electricityCharge,
+                 food_charge AS foodCharge, cleaning_charge AS cleaningCharge,
+                 other_charge AS otherCharge,
+                 DATE_FORMAT(payment_date, '%d %b %Y') AS date,
+                 payment_date AS rawDate, method, status, created_at AS createdAt`;
+
 /* GET /api/fees?search= */
 router.get("/", async (req, res) => {
   try {
     const search = (req.query.search || "").trim();
 
-    let sql = `SELECT id, payment_code AS paymentCode, student_name AS student,
-                 room_number AS room, amount, DATE_FORMAT(payment_date, '%d %b %Y') AS date,
-                 payment_date AS rawDate, method, status, created_at AS createdAt
+    let sql = `SELECT ${FEE_SELECT}
                FROM fees`;
     const params = [];
 
@@ -49,13 +60,24 @@ router.get("/", async (req, res) => {
 /* POST /api/fees */
 router.post("/", async (req, res) => {
   try {
-    const { student, room, amount, date, method, status } = req.body;
+    const { student, room, amount, date, method, status,
+      roomCharge, electricityCharge, foodCharge, cleaningCharge, otherCharge } = req.body;
 
     if (!student || !student.trim()) {
       return res.status(400).json({ success: false, message: "Student name is required" });
     }
 
-    const numericAmount = parseFloat(amount);
+    const roomC = num(roomCharge);
+    const elecC = num(electricityCharge);
+    const foodC = num(foodCharge);
+    const cleanC = num(cleaningCharge);
+    const otherC = num(otherCharge);
+    const breakdownTotal = roomC + elecC + foodC + cleanC + otherC;
+
+    let numericAmount = parseFloat(amount);
+    if ((!numericAmount || numericAmount <= 0) && breakdownTotal > 0) {
+      numericAmount = breakdownTotal; // auto-total from breakdown
+    }
     if (!numericAmount || numericAmount <= 0) {
       return res.status(400).json({ success: false, message: "Enter a valid amount" });
     }
@@ -68,12 +90,15 @@ router.post("/", async (req, res) => {
     }
 
     const [result] = await db.query(
-      `INSERT INTO fees (student_name, room_number, amount, payment_date, method, status)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO fees (student_name, room_number, amount,
+                         room_charge, electricity_charge, food_charge, cleaning_charge, other_charge,
+                         payment_date, method, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         student.trim(),
         room ? room.trim() : null,
         numericAmount,
+        roomC, elecC, foodC, cleanC, otherC,
         payDate.toISOString().slice(0, 10),
         payMethod,
         payStatus,
@@ -84,9 +109,7 @@ router.post("/", async (req, res) => {
     await db.query(`UPDATE fees SET payment_code = ? WHERE id = ?`, [code, result.insertId]);
 
     const [rows] = await db.query(
-      `SELECT id, payment_code AS paymentCode, student_name AS student,
-              room_number AS room, amount, DATE_FORMAT(payment_date, '%d %b %Y') AS date,
-              payment_date AS rawDate, method, status
+      `SELECT ${FEE_SELECT}
        FROM fees WHERE id = ?`,
       [result.insertId]
     );

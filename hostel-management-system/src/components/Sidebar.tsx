@@ -22,6 +22,7 @@ function Sidebar({ activePage, setActivePage, onLogout, role }: SidebarProps) {
     { name: "Mess", icon: Utensils, roles: ["Admin", "Student"] },
     { name: "Notices", icon: Bell, roles: ["Admin", "Student"] },
     { name: "Reports", icon: BarChart3, roles: ["Admin"] },
+    { name: "Facilities", icon: Building2, roles: ["Admin", "Student"] },
     { name: "Settings", icon: Settings, roles: ["Admin", "Student"] },
   ];
 

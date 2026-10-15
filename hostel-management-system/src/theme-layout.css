@@ -125,6 +125,9 @@
 
   body.sidebar-open .sidebar { transform: translateX(0); }
 
+  /* Lock background scroll while the mobile menu is open */
+  body.sidebar-open { overflow: hidden; }
+
   body.sidebar-open .sidebar-overlay {
     display: block;
     position: fixed;
@@ -160,6 +163,23 @@
   .table-wrapper { overflow-x: auto; }
   table { min-width: 640px; }
   .toast-stack { left: 16px; right: 16px; max-width: none; }
+}
+
+/* Small phones (<=480px): tighten the dashboard so cards & headings fit */
+@media (max-width: 480px) {
+  .content { padding: 14px 12px; }
+  .navbar { padding: 0 12px; gap: 8px; }
+  .navbar h1 { font-size: 16px; }
+  .navbar p { display: none; }
+
+  .stat-card { padding: 16px; }
+  .admin-stats .stat-card h3 { font-size: 26px !important; }
+
+  .page-heading h2 { font-size: 21px; }
+  .page-heading p { font-size: 13px; }
+
+  .admin-heading { padding: 14px !important; }
+  .admin-pill { font-size: 11.5px; padding: 7px 12px; }
 }
 
 .receipt-print { display: none; }

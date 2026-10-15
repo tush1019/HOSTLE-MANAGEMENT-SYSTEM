@@ -14,6 +14,7 @@ import Complaints from "./pages/Complaints";
 import Mess from "./pages/Mess";
 import Notices from "./pages/Notices";
 import Reports from "./pages/Reports";
+import Facilities from "./pages/Facilities";
 import Settings from "./pages/Settings";
 
 type Role = "Admin" | "Student" | null;
@@ -55,7 +56,13 @@ function App() {
   }
 
   if (!role && publicPage === "Login") {
-    return <Login onLogin={handleLogin} />;
+    return (
+      <Login
+        onLogin={handleLogin}
+        onSignup={() => setPublicPage("Signup")}
+        onHome={() => setPublicPage("Home")}
+      />
+    );
   }
 
   if (!role && publicPage === "Signup") {
@@ -91,6 +98,7 @@ function App() {
         {activePage === "Complaints" && <Complaints search={globalSearch} role={role} />}
         {activePage === "Mess" && <Mess search={globalSearch} role={role} />}
         {activePage === "Notices" && <Notices role={role} />}
+        {activePage === "Facilities" && <Facilities />}
         {activePage === "Reports" && <Reports />}
         {activePage === "Settings" && <Settings />}
       </main>

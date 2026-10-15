@@ -4,22 +4,67 @@ const db = require("./db");
 const router = express.Router();
 
 const VALID_STATUS = ["Available", "Occupied", "Maintenance"];
+const VALID_WING = ["Boys", "Girls"];
+const VALID_CATEGORY = ["Standard", "Premium", "Deluxe"];
+const VALID_WASHROOM = ["Attached", "Common"];
+const VALID_CLEANING = ["Cleaning Scheduled", "Cleaning Done", "Overdue"];
+const VALID_GROUND = ["Open", "Closed", "Maintenance"];
+const VALID_SHAFTS = ["Full", "Empty", "Maintenance"];
+const VALID_TOILET = ["Good", "Fair", "Poor"];
 
-/* GET /api/rooms?search= */
+/* Default photo per wing & capacity (files live in frontend public/rooms) */
+function defaultPhoto(wing, capacity) {
+  if (capacity === 1) return "/rooms/premium-room.svg";
+  return wing === "Girls" ? "/rooms/girls-room.svg" : "/rooms/boys-room.svg";
+}
+
+function num(v, fallback = 0) {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 ? n : fallback;
+}
+
+function pick(value, valid, fallback) {
+  return valid.includes(value) ? value : fallback;
+}
+
+/* Shared column list (camelCase aliases) used by GET / POST / PUT */
+const ROOM_SELECT = `id, room_number AS room, floor, type, capacity,
+             occupied, status, wing, category, washroom, amenities,
+             monthly_rent AS monthlyRent, photo,
+             photo_gallery AS photoGallery,
+             toilet_condition AS toiletCondition,
+             cleaning_status AS cleaningStatus,
+             ground_sports_status AS groundSportsStatus,
+             shafts_status AS shaftsStatus,
+             safety_notes AS safetyNotes,
+             created_at AS createdAt`;
+
+/* GET /api/rooms?search=&wing=&category= */
 router.get("/", async (req, res) => {
   try {
     const search = (req.query.search || "").trim();
+    const wing = (req.query.wing || "").trim();
+    const category = (req.query.category || "").trim();
 
-    let sql = `SELECT id, room_number AS room, floor, type, capacity,
-                 occupied, status, created_at AS createdAt FROM rooms`;
+    const where = [];
     const params = [];
 
     if (search) {
-      sql += ` WHERE room_number LIKE ? OR floor LIKE ? OR type LIKE ?`;
+      where.push(`(room_number LIKE ? OR floor LIKE ? OR type LIKE ? OR amenities LIKE ?)`);
       const like = `%${search}%`;
-      params.push(like, like, like);
+      params.push(like, like, like, like);
+    }
+    if (wing && VALID_WING.includes(wing)) {
+      where.push("wing = ?");
+      params.push(wing);
+    }
+    if (category && VALID_CATEGORY.includes(category)) {
+      where.push("category = ?");
+      params.push(category);
     }
 
+    let sql = `SELECT ${ROOM_SELECT} FROM rooms`;
+    if (where.length) sql += ` WHERE ${where.join(" AND ")}`;
     sql += ` ORDER BY room_number ASC LIMIT 500`;
 
     const [rows] = await db.query(sql, params);
@@ -32,12 +77,13 @@ router.get("/", async (req, res) => {
 });
 
 /* POST /api/rooms */
-router.post("/", async (req, res) => {
+router.post('/', async (req, res) => {
   try {
-    const { room, floor, type, capacity, occupied, status } = req.body;
+    const { room, floor, type, capacity, occupied, status, wing, category, washroom, amenities, monthlyRent, photo,
+      photoGallery, toiletCondition, cleaningStatus, groundSportsStatus, shaftsStatus, safetyNotes } = req.body;
 
     if (!room || !room.trim()) {
-      return res.status(400).json({ success: false, message: "Room number is required" });
+      return res.status(400).json({ success: false, message: 'Room number is required' });
     }
 
     const cap = Math.max(1, parseInt(capacity, 10) || 2);
@@ -45,25 +91,50 @@ router.post("/", async (req, res) => {
     const roomStatus = VALID_STATUS.includes(status)
       ? status
       : occ >= cap
-        ? "Occupied"
-        : "Available";
+        ? 'Occupied'
+        : 'Available';
+    const roomWing = pick(wing, VALID_WING, 'Boys');
+    const roomCategory = pick(category, VALID_CATEGORY, 'Standard');
+    const roomWashroom = pick(washroom, VALID_WASHROOM, 'Common');
+    const roomAmenities = amenities && String(amenities).trim() ? String(amenities).trim() : null;
+    const roomRent = num(monthlyRent, 0);
+    const roomPhoto = photo && photo.trim() ? photo.trim() : defaultPhoto(roomWing, cap);
+    const roomPhotoGallery = photoGallery && String(photoGallery).trim() ? String(photoGallery).trim() : null;
+    const roomToiletCondition = VALID_TOILET.includes(toiletCondition) ? toiletCondition : null;
+    const roomCleaningStatus = VALID_CLEANING.includes(cleaningStatus) ? cleaningStatus : null;
+    const roomGroundSportsStatus = VALID_GROUND.includes(groundSportsStatus) ? groundSportsStatus : null;
+    const roomShaftsStatus = VALID_SHAFTS.includes(shaftsStatus) ? shaftsStatus : null;
+    const roomSafetyNotes = safetyNotes && String(safetyNotes).trim() ? String(safetyNotes).trim() : null;
 
     const [result] = await db.query(
-      `INSERT INTO rooms (room_number, floor, type, capacity, occupied, status)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO rooms (room_number, floor, type, capacity, occupied, status, wing, category, washroom, amenities,
+        monthly_rent, photo, photo_gallery, toilet_condition, cleaning_status,
+        ground_sports_status, shafts_status, safety_notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         room.trim(),
-        floor ? floor.trim() : "Ground Floor",
-        type ? type.trim() : "2 Seater",
+        floor ? floor.trim() : 'Ground Floor',
+        type ? type.trim() : '2 Seater',
         cap,
         occ,
         roomStatus,
+        roomWing,
+        roomCategory,
+        roomWashroom,
+        roomAmenities,
+        roomRent,
+        roomPhoto,
+        roomPhotoGallery,
+        roomToiletCondition,
+        roomCleaningStatus,
+        roomGroundSportsStatus,
+        roomShaftsStatus,
+        roomSafetyNotes,
       ]
     );
 
     const [rows] = await db.query(
-      `SELECT id, room_number AS room, floor, type, capacity,
-              occupied, status, created_at AS createdAt FROM rooms WHERE id = ?`,
+      `SELECT ${ROOM_SELECT} FROM rooms WHERE id = ?`,
       [result.insertId]
     );
 
@@ -80,7 +151,7 @@ router.post("/", async (req, res) => {
 /* PUT /api/rooms/:id */
 router.put("/:id", async (req, res) => {
   try {
-    const { room, floor, type, capacity, occupied, status } = req.body;
+    const { room, floor, type, capacity, occupied, status, wing, category, washroom, amenities, monthlyRent, photo, photoGallery, toiletCondition, cleaningStatus, groundSportsStatus, shaftsStatus, safetyNotes } = req.body;
 
     if (!room || !room.trim()) {
       return res.status(400).json({ success: false, message: "Room number is required" });
@@ -89,10 +160,25 @@ router.put("/:id", async (req, res) => {
     const cap = Math.max(1, parseInt(capacity, 10) || 2);
     const occ = Math.min(cap, Math.max(0, parseInt(occupied, 10) || 0));
     const roomStatus = VALID_STATUS.includes(status) ? status : "Available";
+    const roomWing = pick(wing, VALID_WING, "Boys");
+    const roomCategory = pick(category, VALID_CATEGORY, "Standard");
+    const roomWashroom = pick(washroom, VALID_WASHROOM, "Common");
+    const roomAmenities = amenities && String(amenities).trim() ? String(amenities).trim() : null;
+    const roomRent = num(monthlyRent, 0);
+    const roomPhoto = photo && photo.trim() ? photo.trim() : defaultPhoto(roomWing, cap);
+    const roomPhotoGallery = photoGallery && String(photoGallery).trim() ? String(photoGallery).trim() : null;
+    const roomToiletCondition = VALID_TOILET.includes(toiletCondition) ? toiletCondition : null;
+    const roomCleaningStatus = VALID_CLEANING.includes(cleaningStatus) ? cleaningStatus : null;
+    const roomGroundSportsStatus = VALID_GROUND.includes(groundSportsStatus) ? groundSportsStatus : null;
+    const roomShaftsStatus = VALID_SHAFTS.includes(shaftsStatus) ? shaftsStatus : null;
+    const roomSafetyNotes = safetyNotes && String(safetyNotes).trim() ? String(safetyNotes).trim() : null;
 
     const [result] = await db.query(
       `UPDATE rooms SET room_number = ?, floor = ?, type = ?,
-        capacity = ?, occupied = ?, status = ? WHERE id = ?`,
+        capacity = ?, occupied = ?, status = ?, wing = ?, category = ?,
+        washroom = ?, amenities = ?, monthly_rent = ?, photo = ?,
+        photo_gallery = ?, toilet_condition = ?, cleaning_status = ?,
+        ground_sports_status = ?, shafts_status = ?, safety_notes = ? WHERE id = ?`,
       [
         room.trim(),
         floor ? floor.trim() : "Ground Floor",
@@ -100,6 +186,18 @@ router.put("/:id", async (req, res) => {
         cap,
         occ,
         roomStatus,
+        roomWing,
+        roomCategory,
+        roomWashroom,
+        roomAmenities,
+        roomRent,
+        roomPhoto,
+        roomPhotoGallery,
+        roomToiletCondition,
+        roomCleaningStatus,
+        roomGroundSportsStatus,
+        roomShaftsStatus,
+        roomSafetyNotes,
         req.params.id,
       ]
     );
@@ -109,8 +207,7 @@ router.put("/:id", async (req, res) => {
     }
 
     const [rows] = await db.query(
-      `SELECT id, room_number AS room, floor, type, capacity,
-              occupied, status, created_at AS createdAt FROM rooms WHERE id = ?`,
+      `SELECT ${ROOM_SELECT} FROM rooms WHERE id = ?`,
       [req.params.id]
     );
 

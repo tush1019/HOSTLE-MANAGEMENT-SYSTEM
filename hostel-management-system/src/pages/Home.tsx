@@ -278,33 +278,45 @@ function Home({ onLogin, onSignup }: HomeProps) {
         </section>
 
         {/* STATS */}
-        <section className="public-stats extreme-stats">
+        <section className="public-stats extreme-stats" aria-label="Live hostel statistics">
 
-          <div>
-            <strong>{live ? `${live.students.total}+` : "\u2014"}</strong>
-            <span>Students</span>
+          <div className="extreme-stat">
+            <div className="extreme-stat-icon indigo"><Users size={22} /></div>
+            <div>
+              <strong>{live ? `${live.students.total}+` : "\u2014"}</strong>
+              <span>Students</span>
+            </div>
           </div>
 
-          <div>
-            <strong>{live ? live.rooms.total : "\u2014"}</strong>
-            <span>Rooms</span>
+          <div className="extreme-stat">
+            <div className="extreme-stat-icon blue"><BedDouble size={22} /></div>
+            <div>
+              <strong>{live ? live.rooms.total : "\u2014"}</strong>
+              <span>Rooms</span>
+            </div>
           </div>
 
-          <div>
-            <strong>{live ? `${resolution}%` : "\u2014"}</strong>
-            <span>Complaints Resolved</span>
+          <div className="extreme-stat">
+            <div className="extreme-stat-icon green"><MessageSquareWarning size={22} /></div>
+            <div>
+              <strong>{live ? `${resolution}%` : "\u2014"}</strong>
+              <span>Complaints Resolved</span>
+            </div>
           </div>
 
-          <div>
-            <strong>{live ? formatINR(live.fees.paid) : "\u2014"}</strong>
-            <span>Fees Collected</span>
+          <div className="extreme-stat">
+            <div className="extreme-stat-icon amber"><CreditCard size={22} /></div>
+            <div>
+              <strong>{live ? formatINR(live.fees.paid) : "\u2014"}</strong>
+              <span>Fees Collected</span>
+            </div>
           </div>
 
         </section>
 
         {/* FEATURES */}
         <section className="public-features extreme-features" id="features">
-          <div className="public-section-heading">
+          <div className="public-section-heading extreme-features-head">
 
             <span>POWERFUL FEATURES</span>
 
@@ -321,9 +333,9 @@ function Home({ onLogin, onSignup }: HomeProps) {
 
           </div>
 
-          <div className="feature-grid">
+          <div className="feature-grid extreme-grid">
 
-            <div className="feature-card extreme-fc-1">
+            <div className="feature-card extreme-fi-1">
               <div className="feature-icon">
                 <Users size={23} />
               </div>
@@ -336,7 +348,7 @@ function Home({ onLogin, onSignup }: HomeProps) {
               </p>
             </div>
 
-            <div className="feature-card extreme-fc-2">
+            <div className="feature-card extreme-fi-2">
               <div className="feature-icon">
                 <BedDouble size={23} />
               </div>
@@ -349,7 +361,7 @@ function Home({ onLogin, onSignup }: HomeProps) {
               </p>
             </div>
 
-            <div className="feature-card extreme-fc-3">
+            <div className="feature-card extreme-fi-3">
               <div className="feature-icon">
                 <CreditCard size={23} />
               </div>
@@ -362,7 +374,7 @@ function Home({ onLogin, onSignup }: HomeProps) {
               </p>
             </div>
 
-            <div className="feature-card extreme-fc-4">
+            <div className="feature-card extreme-fi-4">
               <div className="feature-icon">
                 <MessageSquareWarning size={23} />
               </div>
@@ -375,7 +387,7 @@ function Home({ onLogin, onSignup }: HomeProps) {
               </p>
             </div>
 
-            <div className="feature-card extreme-fc-5">
+            <div className="feature-card extreme-fi-5">
               <div className="feature-icon">
                 <Utensils size={23} />
               </div>
@@ -388,7 +400,7 @@ function Home({ onLogin, onSignup }: HomeProps) {
               </p>
             </div>
 
-            <div className="feature-card extreme-fc-6">
+            <div className="feature-card extreme-fi-6">
               <div className="feature-icon">
                 <Building2 size={23} />
               </div>
@@ -406,7 +418,7 @@ function Home({ onLogin, onSignup }: HomeProps) {
 
         {/* ABOUT */}
         <section
-          className="public-about"
+          className="public-about extreme-about"
           id="about"
         >
           <div className="about-card">
@@ -447,7 +459,7 @@ function Home({ onLogin, onSignup }: HomeProps) {
       </main>
 
       {/* FOOTER */}
-      <footer className="public-footer">
+      <footer className="public-footer extreme-footer">
 
         <div className="footer-brand">
           <div className="public-brand-icon">

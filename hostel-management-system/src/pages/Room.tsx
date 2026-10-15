@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { BedDouble, Plus, Pencil, Trash2, Search } from "lucide-react";
 import { api } from "../lib/api";
+import { formatINR } from "../lib/format";
 import { useToast } from "../components/Toast";
 import Modal from "../components/Modal";
 
@@ -8,14 +9,39 @@ type Room = {
   id: number; room: string; floor: string; type: string;
   capacity: number; occupied: number;
   status: "Available" | "Occupied" | "Maintenance";
+  wing: "Boys" | "Girls";
+  category: "Standard" | "Premium" | "Deluxe";
+  washroom: "Attached" | "Common";
+  amenities: string | null;
+  monthlyRent: number | string;
+  photo: string | null;
+  photoGallery: string | null;
+  toiletCondition: string | null;
+  cleaningStatus: string | null;
+  groundSportsStatus: string | null;
+  shaftsStatus: string | null;
+  safetyNotes: string | null;
 };
 
-const EMPTY = { room: "", floor: "Ground Floor", type: "2 Seater", capacity: "2", occupied: "0", status: "Available" };
+const EMPTY = {
+  room: "", floor: "Ground Floor", type: "2 Seater", capacity: "2", occupied: "0",
+  status: "Available", wing: "Boys", category: "Standard", washroom: "Common",
+  amenities: "", monthlyRent: "", photo: "",
+  photoGallery: "", toiletCondition: "", cleaningStatus: "",
+  groundSportsStatus: "", shaftsStatus: "", safetyNotes: "",
+};
 
-function statusClass(s: string) {
-  if (s === "Occupied") return "room-status room-occupied";
-  if (s === "Maintenance") return "room-status room-maintenance";
-  return "room-status room-available";
+const WINGS = ["All", "Boys", "Girls"] as const;
+const CATEGORIES = ["All", "Standard", "Premium", "Deluxe"] as const;
+
+function wingClass(w: string) {
+  return w === "Girls" ? "room-wing room-wing-girls" : "room-wing room-wing-boys";
+}
+
+function categoryClass(c: string) {
+  if (c === "Deluxe") return "room-category room-category-deluxe";
+  if (c === "Premium") return "room-category room-category-premium";
+  return "room-category room-category-standard";
 }
 
 function Rooms({ search }: { search: string }) {
@@ -28,13 +54,19 @@ function Rooms({ search }: { search: string }) {
   const [form, setForm] = useState(EMPTY);
   const [saving, setSaving] = useState(false);
   const [q, setQ] = useState("");
+  const [wing, setWing] = useState<(typeof WINGS)[number]>("All");
+  const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("All");
 
   const load = async (query?: string) => {
     setLoading(true);
     setErr("");
     try {
+      const params = new URLSearchParams();
       const term = query ?? search;
-      const suffix = term ? `?search=${encodeURIComponent(term)}` : "";
+      if (term) params.set("search", term);
+      if (wing !== "All") params.set("wing", wing);
+      if (category !== "All") params.set("category", category);
+      const suffix = params.toString() ? `?${params.toString()}` : "";
       setRows(await api<Room[]>(`/rooms${suffix}`));
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Failed to load rooms");
@@ -47,7 +79,7 @@ function Rooms({ search }: { search: string }) {
   useEffect(() => {
     const t = window.setTimeout(() => load(search), 300);
     return () => window.clearTimeout(t);
-  }, [search]);
+  }, [search, wing, category]);
 
   const openAdd = () => { setEditing(null); setForm(EMPTY); setShowModal(true); };
   const openEdit = (r: Room) => {
@@ -55,6 +87,16 @@ function Rooms({ search }: { search: string }) {
     setForm({
       room: r.room, floor: r.floor, type: r.type,
       capacity: String(r.capacity), occupied: String(r.occupied), status: r.status,
+      wing: r.wing || "Boys", category: r.category || "Standard",
+      washroom: r.washroom || "Common", amenities: r.amenities || "",
+      monthlyRent: r.monthlyRent != null ? String(r.monthlyRent) : "",
+      photo: r.photo || "",
+      photoGallery: r.photoGallery || "",
+      toiletCondition: r.toiletCondition || "",
+      cleaningStatus: r.cleaningStatus || "",
+      groundSportsStatus: r.groundSportsStatus || "",
+      shaftsStatus: r.shaftsStatus || "",
+      safetyNotes: r.safetyNotes || "",
     });
     setShowModal(true);
   };
@@ -63,7 +105,12 @@ function Rooms({ search }: { search: string }) {
     if (!form.room.trim()) { notify("Room number is required", "error"); return; }
     setSaving(true);
     try {
-      const body = { ...form, capacity: Number(form.capacity), occupied: Number(form.occupied) };
+      const body = {
+        ...form,
+        capacity: Number(form.capacity),
+        occupied: Number(form.occupied),
+        monthlyRent: form.monthlyRent === "" ? 0 : Number(form.monthlyRent),
+      };
       if (editing) {
         await api(`/rooms/${editing.id}`, { method: "PUT", body });
         notify("Room updated");
@@ -133,9 +180,31 @@ function Rooms({ search }: { search: string }) {
       <div className="rooms-table-card">
         <div className="rooms-table-header">
           <div><h3>All Rooms</h3><p>{filtered.length} record(s)</p></div>
-          <div className="room-search">
-            <Search size={16} />
-            <input placeholder="Filter..." value={q} onChange={(e) => setQ(e.target.value)} />
+          <div className="room-filters">
+            <div className="room-search">
+              <Search size={16} />
+              <input placeholder="Filter..." value={q} onChange={(e) => setQ(e.target.value)} />
+            </div>
+            <select
+              className="room-filter-select"
+              value={wing}
+              onChange={(e) => setWing(e.target.value as (typeof WINGS)[number])}
+              aria-label="Filter by wing"
+            >
+              {WINGS.map((w) => (
+                <option key={w} value={w}>{w === "All" ? "All wings" : w}</option>
+              ))}
+            </select>
+            <select
+              className="room-filter-select"
+              value={category}
+              onChange={(e) => setCategory(e.target.value as (typeof CATEGORIES)[number])}
+              aria-label="Filter by category"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>{c === "All" ? "All categories" : c}</option>
+              ))}
+            </select>
           </div>
         </div>
         {loading ? (
@@ -156,8 +225,18 @@ function Rooms({ search }: { search: string }) {
           <div className="table-wrapper">
             <table>
               <thead>
-                <tr><th>Room</th><th>Type</th><th>Beds</th><th>Status</th>
-                <th style={{ textAlign: "right" }}>Actions</th></tr>
+                <tr>
+                  <th>Room</th>
+                  <th>Type</th>
+                  <th>Beds</th>
+                  <th>Wing</th>
+                  <th>Category</th>
+                  <th>Washroom</th>
+                  <th>Amenities</th>
+                  <th>Photo</th>
+                  <th>Monthly Rent</th>
+                  <th style={{ textAlign: "right" }}>Actions</th>
+                </tr>
               </thead>
               <tbody>
                 {filtered.map((r) => (
@@ -170,7 +249,12 @@ function Rooms({ search }: { search: string }) {
                     </td>
                     <td>{r.type}</td>
                     <td>{r.occupied}/{r.capacity}</td>
-                    <td><span className={statusClass(r.status)}>{r.status}</span></td>
+                    <td><span className={`room-wing ${wingClass(r.wing)}`}>{r.wing}</span></td>
+                    <td><span className={`room-category ${categoryClass(r.category)}`}>{r.category}</span></td>
+                    <td><span className={`room-washroom ${r.washroom === "Attached" ? "room-washroom-attached" : "room-washroom-common"}`}>{r.washroom}</span></td>
+                    <td className="room-amenities">{r.amenities?.split(",").slice(0, 3).join(", ") || "—"}</td>
+                    <td><img src={r.photo || "/rooms/boys-room.svg"} alt={`${r.room} ${r.wing}`} className="room-photo" /></td>
+                    <td className="room-rent">{typeof r.monthlyRent === "number" ? formatINR(r.monthlyRent) : r.monthlyRent || "—"}</td>
                     <td style={{ textAlign: "right" }}>
                       <button type="button" className="action-btn" onClick={() => openEdit(r)} aria-label="Edit">
                         <Pencil size={16} />
@@ -223,6 +307,53 @@ function Rooms({ search }: { search: string }) {
                   onChange={(e) => setForm({ ...form, occupied: e.target.value })} />
               </div>
             </div>
+
+            <div className="hub-form-subhead">Premium &amp; maintenance details</div>
+            <div className="hub-form-grid">
+              <div className="hub-field"><label>Toilet condition</label>
+                <select value={form.toiletCondition} onChange={(e) => setForm({ ...form, toiletCondition: e.target.value })}>
+                  <option value="">Not set</option>
+                  <option value="Good">Good</option>
+                  <option value="Fair">Fair</option>
+                  <option value="Poor">Poor</option>
+                </select>
+              </div>
+              <div className="hub-field"><label>Cleaning status</label>
+                <select value={form.cleaningStatus} onChange={(e) => setForm({ ...form, cleaningStatus: e.target.value })}>
+                  <option value="">Not set</option>
+                  <option value="Cleaning Scheduled">Cleaning Scheduled</option>
+                  <option value="Cleaning Done">Cleaning Done</option>
+                  <option value="Overdue">Overdue</option>
+                </select>
+              </div>
+              <div className="hub-field"><label>Ground &amp; sports</label>
+                <select value={form.groundSportsStatus} onChange={(e) => setForm({ ...form, groundSportsStatus: e.target.value })}>
+                  <option value="">Not set</option>
+                  <option value="Open">Open</option>
+                  <option value="Closed">Closed</option>
+                  <option value="Maintenance">Maintenance</option>
+                </select>
+              </div>
+              <div className="hub-field"><label>Water shafts</label>
+                <select value={form.shaftsStatus} onChange={(e) => setForm({ ...form, shaftsStatus: e.target.value })}>
+                  <option value="">Not set</option>
+                  <option value="Full">Full</option>
+                  <option value="Empty">Empty</option>
+                  <option value="Maintenance">Maintenance</option>
+                </select>
+              </div>
+              <div className="hub-field full"><label>Safety notes</label>
+                <textarea rows={2} value={form.safetyNotes}
+                  onChange={(e) => setForm({ ...form, safetyNotes: e.target.value })}
+                  placeholder="Gate timings, CCTV coverage, emergency contacts..." />
+              </div>
+              <div className="hub-field full"><label>Photo gallery</label>
+                <textarea rows={2} value={form.photoGallery}
+                  onChange={(e) => setForm({ ...form, photoGallery: e.target.value })}
+                  placeholder="/rooms/101-a.jpg, /rooms/101-b.jpg" />
+              </div>
+            </div>
+
             <div className="hub-form-actions">
               <button type="button" className="btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
               <button type="button" className="primary-btn" onClick={save} disabled={saving}>

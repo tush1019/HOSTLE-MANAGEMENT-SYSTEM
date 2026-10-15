@@ -18,11 +18,21 @@ router.get("/", async (req, res) => {
              SUM(status = 'Occupied') AS occupied,
              SUM(status = 'Available') AS available,
              SUM(status = 'Maintenance') AS maintenance,
+             SUM(wing = 'Boys') AS boys,
+             SUM(wing = 'Girls') AS girls,
              COALESCE(SUM(capacity), 0) AS beds,
              COALESCE(SUM(occupied), 0) AS bedsFilled
       FROM rooms
     `);
-    const rooms = roomsRows[0] || { total: 0, occupied: 0, available: 0, maintenance: 0, beds: 0, bedsFilled: 0 };
+    const rooms = roomsRows[0] || { total: 0, occupied: 0, available: 0, maintenance: 0, boys: 0, girls: 0, beds: 0, bedsFilled: 0 };
+    rooms.boys = Number(rooms.boys || 0);
+    rooms.girls = Number(rooms.girls || 0);
+    rooms.total = Number(rooms.total || 0);
+    rooms.occupied = Number(rooms.occupied || 0);
+    rooms.available = Number(rooms.available || 0);
+    rooms.maintenance = Number(rooms.maintenance || 0);
+    rooms.beds = Number(rooms.beds || 0);
+    rooms.bedsFilled = Number(rooms.bedsFilled || 0);
 
     const [feesRows] = await db.query(`
       SELECT COALESCE(SUM(CASE WHEN status = 'Paid' THEN amount ELSE 0 END), 0) AS paid,
@@ -83,6 +93,8 @@ router.get("/", async (req, res) => {
           occupied: rooms.occupied || 0,
           available: rooms.available || 0,
           maintenance: rooms.maintenance || 0,
+          boys: rooms.boys || 0,
+          girls: rooms.girls || 0,
           beds: rooms.beds || 0,
           bedsFilled: rooms.bedsFilled || 0,
           occupancyRate,

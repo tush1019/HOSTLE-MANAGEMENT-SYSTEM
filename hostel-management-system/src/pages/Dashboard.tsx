@@ -8,7 +8,7 @@ import { formatINR } from "../lib/format";
 
 type D = {
   students: { total: number; active: number };
-  rooms: { total: number; occupied: number; available: number; maintenance: number; beds: number; bedsFilled: number; occupancyRate: number };
+  rooms: { total: number; occupied: number; available: number; maintenance: number; boys: number; girls: number; beds: number; bedsFilled: number; occupancyRate: number };
   fees: { paid: number; pending: number; paidCount: number; pendingCount: number };
   complaints: { total: number; pending: number; inProgress: number; resolved: number };
   monthlyFees: { month: string; amount: number }[];
@@ -55,6 +55,10 @@ function Dashboard({ role }: { role: "Admin" | "Student" }) {
         <div className="stat-card stat-tint-blue">
           <div className="stat-icon rooms"><BedDouble size={22} /></div>
           <div className="stat-body"><span>Bed Occupancy</span><h3>{d.rooms.occupancyRate}%</h3><p>{d.rooms.bedsFilled}/{d.rooms.beds} beds filled</p></div>
+        </div>
+        <div className="stat-card stat-tint-purple">
+          <div className="stat-icon"><BedDouble size={22} /></div>
+          <div className="stat-body"><span>Girls Wing</span><h3>{d.rooms.girls}</h3><p><TrendingUp size={13} /> {d.rooms.girls} of {d.rooms.total} rooms in the girls wing</p></div>
         </div>
         <div className="stat-card stat-tint-green">
           <div className="stat-icon fees"><CreditCard size={22} /></div>

@@ -12,6 +12,17 @@
   font-family: "Plus Jakarta Sans", Inter, Arial, sans-serif;
 }
 
+/* Smooth in-page scrolling for Home / Features / About anchors,
+   with room for the sticky glassy navbar */
+html {
+  scroll-behavior: smooth;
+}
+
+.extreme-home main,
+.extreme-home section[id] {
+  scroll-margin-top: 96px;
+}
+
 /* ============ PUBLIC NAVBAR — glassy ============ */
 .extreme-home .public-navbar.extreme-nav {
   position: sticky;
@@ -181,6 +192,18 @@
 .extreme-preview-user { display: inline-flex; align-items: center; gap: 7px; }
 .extreme-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2); animation: pulse-dot 1.8s ease-in-out infinite; }
 
+/* Gentle floating motion for the dashboard preview */
+.extreme-home .hero-dashboard.extreme-preview {
+  animation: preview-bob 8s ease-in-out infinite;
+}
+@keyframes preview-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .extreme-home .hero-dashboard.extreme-preview { animation: none; }
+}
+
 .extreme-home .preview-menu { transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease; }
 .extreme-home .preview-menu:hover { transform: translateX(3px); }
 .extreme-home .preview-menu.active {
@@ -228,6 +251,19 @@
 .extreme-stat div { display: flex; flex-direction: column; }
 .extreme-stat strong { font-size: 21px; color: #1e1b4b; }
 .extreme-stat span { font-size: 12px; color: #64748b; font-weight: 600; }
+
+/* The legacy flat dark stats band is replaced by the light glass cards above */
+.extreme-home .public-stats.extreme-stats {
+  background: transparent;
+  border: none;
+  color: inherit;
+}
+.extreme-home .extreme-stats .extreme-stat {
+  border-right: none;
+}
+.extreme-home .extreme-stat-icon {
+  flex-direction: row;
+}
 
 /* ============ FEATURES GRID ============ */
 .extreme-home .public-features { position: relative; }
@@ -296,6 +332,12 @@
 .extreme-about .about-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(0, 0, 0, 0.3); }
 
 .extreme-footer { background: linear-gradient(180deg, #0f0b2d, #1e1b4b) !important; border-top: 1px solid rgba(139, 92, 246, 0.3); }
+/* Light text for the dark gradient footer */
+.extreme-footer .footer-brand strong { color: #ffffff; }
+.extreme-footer .footer-brand span { color: #a5b4fc; }
+.extreme-footer p { color: #9aa6bd; }
+.extreme-footer .footer-links button { color: #c4b5fd; font-weight: 600; transition: color 0.15s ease; }
+.extreme-footer .footer-links button:hover { color: #ffffff; }
 
 /* ============ AUTH PAGES ============ */
 .login-page::before, .signup-page::before {
@@ -540,4 +582,32 @@
   .extreme-home .public-nav { display: none; }
   .extreme-stats { grid-template-columns: 1fr; }
   .extreme-features-head h2 { font-size: 25px; }
+}
+
+/* ============ SMALL PHONES (<=480px) ============ */
+@media (max-width: 480px) {
+  .extreme-home .public-navbar.extreme-nav { margin: 8px 8px 0; padding: 9px 10px; }
+  .extreme-home .public-brand { gap: 8px; }
+  .extreme-home .public-brand h2 { font-size: 17px; }
+  .extreme-home .public-brand span { display: none; }
+  .extreme-home .public-brand-icon { width: 36px; height: 36px; border-radius: 11px; }
+  .extreme-home .public-nav-actions { gap: 6px; }
+  .extreme-home .public-login-btn,
+  .extreme-home .public-signup-btn { padding: 8px 11px; font-size: 12px; gap: 5px; }
+  .extreme-home .public-login-btn svg,
+  .extreme-home .public-signup-btn svg { width: 15px; height: 15px; }
+
+  .extreme-home .public-hero.extreme-hero { padding: 36px 18px; margin: 10px 8px 0; border-radius: 22px; }
+  .extreme-home .hero-content h1 { font-size: 33px; letter-spacing: -1.2px; }
+  .extreme-home .hero-content > p { font-size: 14px; }
+  .extreme-live-strip { padding: 14px; gap: 10px; }
+  .extreme-live-item strong { font-size: 14px; }
+
+  .extreme-stat { padding: 15px 16px; gap: 11px; }
+  .extreme-stat-icon { width: 42px; height: 42px; min-width: 42px; }
+  .extreme-stat strong { font-size: 18px; }
+
+  .extreme-grid .feature-card { padding: 22px 20px !important; }
+  .extreme-about .about-card { padding: 34px 24px; }
+  .extreme-about .about-card h2 { font-size: 25px; }
 }

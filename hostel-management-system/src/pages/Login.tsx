@@ -5,28 +5,68 @@ import {
   Mail,
   LogIn,
   UserRound,
+  Shield,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { API_BASE_URL } from "../lib/api";
+import { ADMIN_PASSKEY } from "../lib/constants";
 
 type LoginProps = {
   onLogin: (role: "Admin" | "Student") => void;
+  onSignup?: () => void;
+  onHome?: () => void;
 };
 
-function Login({ onLogin }: LoginProps) {
+function Login({ onLogin, onSignup, onHome }: LoginProps) {
   const [role, setRole] =
     useState<"Admin" | "Student">("Admin");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Admin passkey fields
+  const [passkey, setPasskey] = useState("");
+  const [showPasskey, setShowPasskey] = useState(false);
+  const [passkeyError, setPasskeyError] = useState("");
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const switchRole = (next: "Admin" | "Student") => {
+    setRole(next);
+    setError("");
+    setPasskeyError("");
+    setPasskey("");
+  };
+
+  const validateAdminRole = () => {
+    setPasskeyError("");
+    if (role === "Admin") {
+      if (!passkey.trim()) {
+        setPasskeyError("Enter the admin passkey to continue.");
+        return false;
+      }
+      if (passkey.trim() !== ADMIN_PASSKEY) {
+        setPasskeyError("Incorrect admin passkey. Please try again.");
+        return false;
+      }
+    }
+    return true;
+  };
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
 
     setError("");
     setLoading(true);
+    setPasskeyError("");
+
+    if (role === "Admin" && !validateAdminRole()) {
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch(
@@ -163,10 +203,7 @@ function Login({ onLogin }: LoginProps) {
                   ? "role-active"
                   : ""
               }
-              onClick={() => {
-                setRole("Admin");
-                setError("");
-              }}
+              onClick={() => switchRole("Admin")}
             >
               <UserRound size={17} />
               Admin
@@ -179,10 +216,7 @@ function Login({ onLogin }: LoginProps) {
                   ? "role-active"
                   : ""
               }
-              onClick={() => {
-                setRole("Student");
-                setError("");
-              }}
+              onClick={() => switchRole("Student")}
             >
               <UserRound size={17} />
               Student
@@ -208,6 +242,8 @@ function Login({ onLogin }: LoginProps) {
                   type="email"
                   placeholder="Enter your email"
                   value={email}
+                  autoComplete="email"
+                  inputMode="email"
                   onChange={(e) => {
                     setEmail(e.target.value);
                     setError("");
@@ -230,19 +266,64 @@ function Login({ onLogin }: LoginProps) {
                 <Lock size={17} />
 
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
+                  autoComplete="current-password"
                   onChange={(e) => {
                     setPassword(e.target.value);
                     setError("");
                   }}
                   required
                 />
+                <button
+                  type="button"
+                  className="eye-toggle"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
 
               </div>
 
             </div>
+
+            {/* ADMIN PASSKEY */}
+
+            {role === "Admin" && (
+              <div className="login-field">
+                <label>Admin Passkey</label>
+                <div className="input-wrapper">
+                  <Shield size={17} />
+                  <input
+                    type={showPasskey ? "text" : "password"}
+                    placeholder="6-digit passkey"
+                    value={passkey}
+                    inputMode="numeric"
+                    maxLength={6}
+                    autoComplete="off"
+                    onChange={(e) => {
+                      setPasskey(e.target.value.replace(/\D/g, "").slice(0, 6));
+                      setPasskeyError("");
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="eye-toggle"
+                    aria-label={showPasskey ? "Hide passkey" : "Show passkey"}
+                    onClick={() => setShowPasskey(!showPasskey)}
+                  >
+                    {showPasskey ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {passkeyError && (
+                  <div className="login-error" style={{ marginTop: "6px" }}>
+                    {passkeyError}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* ERROR */}
 
@@ -263,7 +344,9 @@ function Login({ onLogin }: LoginProps) {
 
               {loading
                 ? "Logging in..."
-                : `Login as ${role}`}
+                : role === "Admin"
+                  ? "Login with Passkey"
+                  : `Login as ${role}`}
             </button>
 
           </form>
@@ -279,6 +362,24 @@ function Login({ onLogin }: LoginProps) {
               HostelHub database.
             </p>
 
+          </div>
+
+          {/* ================= NAV LINKS ================= */}
+
+          <div className="login-links">
+            {onSignup && (
+              <div>
+                New to HostelHub?{" "}
+                <button type="button" onClick={onSignup}>
+                  Create an account
+                </button>
+              </div>
+            )}
+            {onHome && (
+              <button type="button" className="login-back" onClick={onHome}>
+                &larr; Back to home
+              </button>
+            )}
           </div>
 
         </div>

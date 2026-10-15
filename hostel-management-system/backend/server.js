@@ -13,6 +13,7 @@ const roomRoutes = require("./rooms");
 const feeRoutes = require("./fees");
 const complaintRoutes = require("./complaints");
 const messRoutes = require("./mess");
+const facilityRoutes = require("./facilities");
 const noticeRoutes = require("./notices");
 const dashboardRoutes = require("./dashboard");
 
@@ -104,6 +105,7 @@ app.use("/api/rooms", roomRoutes);
 app.use("/api/fees", feeRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/mess", messRoutes);
+app.use("/api/facilities", facilityRoutes);
 app.use("/api/notices", noticeRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
