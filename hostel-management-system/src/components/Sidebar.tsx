@@ -2,6 +2,8 @@ import {
   LayoutDashboard, Users, BedDouble, CreditCard,
   MessageSquareWarning, Utensils, BarChart3, Bell,
   Settings, LogOut, Building2,
+  ShieldAlert, Phone, Wifi, Droplets, Zap, MapPin,
+  Wrench, Calendar, Image, Dumbbell, LayoutList, UserCircle,
 } from "lucide-react";
 import { API_BASE_URL } from "../lib/api";
 
@@ -15,6 +17,7 @@ type SidebarProps = {
 function Sidebar({ activePage, setActivePage, onLogout, role }: SidebarProps) {
   const allItems = [
     { name: "Dashboard", icon: LayoutDashboard, roles: ["Admin", "Student"] },
+    { name: "Profile", icon: UserCircle, roles: ["Student"] },
     { name: "Students", icon: Users, roles: ["Admin"] },
     { name: "Rooms", icon: BedDouble, roles: ["Admin"] },
     { name: "Fees", icon: CreditCard, roles: ["Admin", "Student"] },
@@ -24,6 +27,19 @@ function Sidebar({ activePage, setActivePage, onLogout, role }: SidebarProps) {
     { name: "Reports", icon: BarChart3, roles: ["Admin"] },
     { name: "Facilities", icon: Building2, roles: ["Admin", "Student"] },
     { name: "Settings", icon: Settings, roles: ["Admin", "Student"] },
+    { name: "Emergency Contacts", icon: ShieldAlert, roles: ["Admin", "Student"] },
+    { name: "Medical Facilities", icon: Phone, roles: ["Admin", "Student"] },
+    { name: "WiFi Information", icon: Wifi, roles: ["Admin", "Student"] },
+    { name: "Laundry Services", icon: Droplets, roles: ["Admin", "Student"] },
+    { name: "Study Room", icon: LayoutList, roles: ["Admin", "Student"] },
+    { name: "Water & Electricity", icon: Zap, roles: ["Admin", "Student"] },
+    { name: "Housekeeping", icon: MapPin, roles: ["Admin", "Student"] },
+    { name: "Entry & Exit Rules", icon: ShieldAlert, roles: ["Admin", "Student"] },
+    { name: "Maintenance Request", icon: Wrench, roles: ["Admin", "Student"] },
+    { name: "Leave Management", icon: Calendar, roles: ["Admin", "Student"] },
+    { name: "Mess Photos", icon: Utensils, roles: ["Admin", "Student"] },
+    { name: "Gym Photos", icon: Dumbbell, roles: ["Admin", "Student"] },
+    { name: "Room Issue Photos", icon: Image, roles: ["Admin", "Student"] },
   ];
 
   const menuItems = allItems.filter((i) => !role || i.roles.includes(role));

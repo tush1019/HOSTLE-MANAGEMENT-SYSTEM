@@ -2,6 +2,9 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const db = require("./db");
 
+/* Admin passkey — env override or built-in default (6 digits). */
+const ADMIN_PASSKEY = process.env.ADMIN_PASSKEY || "484950";
+
 const router = express.Router();
 
 function isValidEmail(email) {
@@ -111,6 +114,17 @@ router.post("/register", async (req, res) => {
     const userRole = role || "Student";
     if (!["Admin", "Student"].includes(userRole)) {
       return res.status(400).json({ success: false, message: "Invalid role" });
+    }
+
+    // Admin registration requires the correct passkey
+    if (userRole === "Admin") {
+      const { passkey } = req.body;
+      if (!passkey || String(passkey).trim() !== ADMIN_PASSKEY) {
+        return res.status(400).json({
+          success: false,
+          message: "Admin registration requires the correct 6-digit passkey.",
+        });
+      }
     }
 
     const cleanEmail = toCleanEmail(email);

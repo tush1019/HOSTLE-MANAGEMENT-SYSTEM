@@ -1,23 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type JSX } from "react";
 import {
   Building2,
   LogIn,
   UserPlus,
   BedDouble,
-  Users,
-  CreditCard,
-  MessageSquareWarning,
   ArrowRight,
-  ShieldCheck,
   Utensils,
   Sparkles,
-  Star,
-  Zap,
-  BedSingle,
-  BadgeCheck,
+  Phone,
+  Mail,
+  Calendar,
+  GraduationCap,
+  Leaf,
+  Droplets,
+  Wrench,
+  Shield,
+  Shirt,
+  Dumbbell,
+  BookOpen,
 } from "lucide-react";
 import { api } from "../lib/api";
-import { formatINR } from "../lib/format";
 
 type HomeProps = {
   onLogin: () => void;
@@ -31,11 +33,51 @@ type LiveStats = {
   complaints: { total: number; resolved: number };
 };
 
+const HERO_IMAGE =
+  "https://images.unsplash.com/photo-1523247669263-86d820b6937f?auto=format&fit=crop&w=1920&q=80";
+
+const FACILITY_IMAGES: Record<string, string> = {
+  rooms: "https://images.unsplash.com/photo-1502672260266-1c1ef1d77368?auto=format&fit=crop&w=800&q=80",
+  mess: "https://images.unsplash.com/photo-1556228578-0d85b8f80906?auto=format&fit=crop&w=800&q=80",
+  study: "https://images.unsplash.com/photo-1524995799762-66c461e8f90e?auto=format&fit=crop&w=800&q=80",
+  gym: "https://images.unsplash.com/photo-1534438327275-144869529a6b?auto=format&fit=crop&w=800&q=80",
+  medical: "https://images.unsplash.com/photo-1551089806-d69f491f3454?auto=format&fit=crop&w=800&q=80",
+  housekeeping: "https://images.unsplash.com/photo-1581539228545-8b79337da900?auto=format&fit=crop&w=800&q=80",
+};
+
+function ImageWithFallback({ src, alt, className, fallbackColor, children }: { src: string; alt: string; className?: string; fallbackColor?: string; children?: JSX.Element }) {
+  const [error, setError] = useState(false);
+  return (
+    <div className={`image-wrapper ${className || ""}`} style={{ backgroundColor: fallbackColor || "var(--surface-2)" }}>
+      {!error && (
+        <img
+          src={src}
+          alt={alt}
+          className="content-image"
+          onError={() => setError(true)}
+          loading="lazy"
+          decoding="async"
+        />
+      )}
+      {error && children && (
+        <div className="image-fallback">{children}</div>
+      )}
+    </div>
+  );
+}
+
 function Home({ onLogin, onSignup }: HomeProps) {
   const [live, setLive] = useState<LiveStats | null>(null);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     api<LiveStats>("/dashboard").then(setLive).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const resolution = live && live.complaints.total > 0
@@ -43,446 +85,451 @@ function Home({ onLogin, onSignup }: HomeProps) {
     : 0;
 
   return (
-    <div className="public-home extreme-home">
+    <div className="public-home premium-home">
 
-      {/* NAVBAR */}
-      <header className="public-navbar extreme-nav">
+      {/* PUBLIC NAVBAR */}
+      <header
+        className={`public-navbar premium-nav ${scrolled ? "nav-scrolled" : ""}`}
+      >
         <div className="public-brand">
-          <div className="public-brand-icon extreme-brand-icon">
-            <Building2 size={25} />
+          <div className="public-brand-icon premium-brand-icon">
+            <Building2 size={26} className="brand-icon" />
           </div>
-
           <div>
-            <h2>HostelHub</h2>
-            <span>Management System</span>
+            <h2 className="brand-name">HostelHub</h2>
+            <span className="brand-tag">Management System</span>
           </div>
         </div>
 
         <nav className="public-nav">
-          <a href="#home">Home</a>
-          <a href="#features">Features</a>
-          <a href="#about">About</a>
+          <a href="#home" className="nav-link active">Home</a>
+          <a href="#features" className="nav-link">Features</a>
+          <a href="#facilities" className="nav-link">Campus</a>
+          <a href="#why" className="nav-link">Why Choose Us</a>
+          <a href="#about" className="nav-link">About</a>
         </nav>
 
         <div className="public-nav-actions">
           <button
             className="public-login-btn"
             onClick={onLogin}
+            aria-label="Student Login"
           >
             <LogIn size={17} />
-            Login
+            <span>Login</span>
           </button>
 
           <button
-            className="public-signup-btn extreme-cta"
+            className="public-signup-btn premium-cta"
             onClick={onSignup}
+            aria-label="Create Account"
           >
             <UserPlus size={17} />
-            Sign Up
+            <span>Get Started</span>
           </button>
         </div>
+
+        <button
+          type="button"
+          className="mobile-menu-btn"
+          aria-label="Toggle menu"
+          onClick={() => document.body.classList.toggle("nav-open")}
+        >
+          <span className="menu-line"></span>
+          <span className="menu-line"></span>
+          <span className="menu-line"></span>
+        </button>
       </header>
 
-      {/* HERO */}
+      {/* MOBILE MENU OVERLAY */}
+      <div className="mobile-menu-overlay" onClick={() => document.body.classList.remove("nav-open")}>
+        <div className="mobile-menu">
+          <a href="#home" className="mobile-link" onClick={() => document.body.classList.remove("nav-open")}>Home</a>
+          <a href="#features" className="mobile-link" onClick={() => document.body.classList.remove("nav-open")}>Features</a>
+          <a href="#facilities" className="mobile-link" onClick={() => document.body.classList.remove("nav-open")}>Campus</a>
+          <a href="#why" className="mobile-link" onClick={() => document.body.classList.remove("nav-open")}>Why Choose Us</a>
+          <a href="#about" className="mobile-link" onClick={() => document.body.classList.remove("nav-open")}>About</a>
+          <div className="mobile-divider" />
+          <button className="mobile-btn public-login-btn" onClick={() => { document.body.classList.remove("nav-open"); onLogin(); }}>
+            <LogIn size={17} /> Login
+          </button>
+          <button className="mobile-btn public-signup-btn premium-cta" onClick={() => { document.body.classList.remove("nav-open"); onSignup(); }}>
+            <UserPlus size={17} /> Get Started
+          </button>
+        </div>
+      </div>
+
+      {/* HERO SECTION */}
       <main id="home">
+        <section className="public-hero premium-hero">
+          <div className="hero-image-container">
+            <ImageWithFallback
+              src={HERO_IMAGE}
+              alt="Green campus grounds with trees and lawns"
+              className="hero-bg-image"
+              fallbackColor="var(--surface-2)"
+            />
+            <div className="hero-overlay" />
+          </div>
 
-        <section className="public-hero extreme-hero">
-          <div className="extreme-orb orb-1" />
-          <div className="extreme-orb orb-2" />
-          <div className="extreme-orb orb-3" />
           <div className="hero-content">
-
-            <div className="hero-badge extreme-badge">
+            <div className="hero-badge premium-badge">
               <Sparkles size={15} />
               Smart Hostel Management
-              <span className="extreme-badge-dot" />
+              <span className="premium-badge-dot" />
               v2.0 Live
             </div>
 
             <h1>
-              Manage Your Hostel
-              <span className="extreme-gradient-text"> Smarter & Easier.</span>
+              Your Comfort.
+              <br />
+              <span className="hero-gradient-text">Your Community. Your Home.</span>
             </h1>
 
-            <p>
-              A modern hostel management system designed to simplify
-              student records, rooms, fees, complaints and mess
-              management — all in one place.
+            <p className="hero-description">
+              A modern, premium hostel management platform designed for students
+              and administrators. From room allocation and mess management to
+              leave applications and maintenance tracking — everything in one
+              beautiful, easy-to-use place.
             </p>
 
-            <div className="hero-buttons">
-              <button
-                className="hero-primary-btn extreme-primary"
-                onClick={onLogin}
-              >
-                Get Started
-                <ArrowRight size={18} />
-              </button>
+            <div className="hero-stats">
+              {live && (
+                <>
+                  <div className="hero-stat">
+                    <span className="stat-value">{live.students.total}</span>
+                    <span className="stat-label">Students</span>
+                  </div>
+                  <div className="hero-stat">
+                    <span className="stat-value">{live.rooms.occupancyRate}%</span>
+                    <span className="stat-label">Occupancy</span>
+                  </div>
+                  <div className="hero-stat">
+                    <span className="stat-value">{resolution}%</span>
+                    <span className="stat-label">Requests Resolved</span>
+                  </div>
+                </>
+              )}
+            </div>
 
+            <div className="hero-actions">
               <button
-                className="hero-secondary-btn extreme-secondary"
+                className="hero-primary-btn premium-primary"
+                onClick={onLogin}
+                aria-label="Student Login"
+              >
+                <LogIn size={18} />
+                <span>Student Login</span>
+              </button>
+              <button
+                className="hero-secondary-btn premium-secondary"
                 onClick={onSignup}
+                aria-label="Create Account"
               >
-                Create Account
                 <UserPlus size={18} />
+                <span>Register Now</span>
               </button>
             </div>
 
-            <div className="hero-trust extreme-trust">
-              <span className="extreme-trust-item"><ShieldCheck size={17} /> Simple</span>
-              <span className="extreme-trust-sep">•</span>
-              <span className="extreme-trust-item"><Zap size={16} /> Secure</span>
-              <span className="extreme-trust-sep">•</span>
-              <span className="extreme-trust-item"><Star size={16} /> Efficient</span>
-            </div>
-
-            {live && (
-              <div className="extreme-live-strip">
-                <div className="extreme-live-item">
-                  <Users size={17} />
-                  <div><strong>{live.students.total}</strong><span>Students</span></div>
-                </div>
-                <div className="extreme-live-item">
-                  <BedSingle size={17} />
-                  <div><strong>{live.rooms.occupancyRate}%</strong><span>Occupancy</span></div>
-                </div>
-                <div className="extreme-live-item">
-                  <CreditCard size={17} />
-                  <div><strong>{formatINR(live.fees.paid)}</strong><span>Collected</span></div>
-                </div>
-                <div className="extreme-live-item">
-                  <BadgeCheck size={17} />
-                  <div><strong>{resolution}%</strong><span>Resolved</span></div>
-                </div>
+            <div className="hero-trust">
+              <div className="trust-item">
+                <Shield size={16} />
+                <span>Secure & Private</span>
               </div>
-            )}
-
-          </div>
-
-          {/* DASHBOARD PREVIEW */}
-          <div className="hero-dashboard extreme-preview">
-            <div className="extreme-preview-glow" />
-
-            <div className="preview-topbar">
-              <div className="preview-dots">
-                <span></span>
-                <span></span>
-                <span></span>
+              <div className="trust-divider" />
+              <div className="trust-item">
+                <Leaf size={16} />
+                <span>Eco-Friendly Campus</span>
               </div>
-
-              <div className="preview-title">
-                Hostel Dashboard
-              </div>
-
-              <div className="preview-user extreme-preview-user">
-                <span className="extreme-live-dot" /> Admin
-              </div>
-            </div>
-
-            <div className="preview-body">
-
-              <div className="preview-sidebar">
-                <div className="preview-logo">
-                  <Building2 size={17} />
-                </div>
-
-                <div className="preview-menu active">Dashboard</div>
-
-                <div className="preview-menu">Students</div>
-
-                <div className="preview-menu">Rooms</div>
-
-                <div className="preview-menu">Fees</div>
-
-                <div className="preview-menu">Complaints</div>
-              </div>
-
-              <div className="preview-content">
-
-                <div className="preview-heading">
-                  <div>
-                    <h3>Dashboard</h3>
-                    <p>Welcome back, Admin 👋</p>
-                  </div>
-                </div>
-
-                <div className="preview-stats">
-
-                  <div className="preview-stat">
-                    <div className="preview-stat-icon">
-                      <Users size={16} />
-                    </div>
-                    <div>
-                      <small>Total Students</small>
-                      <strong>{live ? live.students.total : "\u2014"}</strong>
-                    </div>
-                  </div>
-
-                  <div className="preview-stat">
-                    <div className="preview-stat-icon">
-                      <BedDouble size={16} />
-                    </div>
-                    <div>
-                      <small>Bed Occupancy</small>
-                      <strong>{live ? `${live.rooms.occupancyRate}%` : "\u2014"}</strong>
-                    </div>
-                  </div>
-
-                  <div className="preview-stat">
-                    <div className="preview-stat-icon">
-                      <CreditCard size={16} />
-                    </div>
-                    <div>
-                      <small>Fee Collection</small>
-                      <strong>₹20.4L</strong>
-                    </div>
-                  </div>
-
-                </div>
-
-                <div className="preview-lower">
-
-                  <div className="preview-chart">
-                    <div className="preview-card-title">
-                      <strong>Fee Collection</strong>
-                      <span className="extreme-chart-badge"><span className="extreme-live-dot" /> Live</span>
-                    </div>
-
-                    <div className="fake-chart">
-                      <div style={{ height: "35%" }}></div>
-                      <div style={{ height: "48%" }}></div>
-                      <div style={{ height: "42%" }}></div>
-                      <div style={{ height: "65%" }}></div>
-                      <div style={{ height: "58%" }}></div>
-                      <div style={{ height: "80%" }}></div>
-                    </div>
-                  </div>
-
-                  <div className="preview-occupancy">
-                    <div className="preview-card-title">
-                      <strong>Occupancy</strong>
-                    </div>
-
-                    <div className="preview-circle">
-                      <strong>{live ? `${live.rooms.occupancyRate}%` : "\u2014"}</strong>
-                    </div>
-
-                    <small>{live ? `${live.rooms.bedsFilled} of ${live.rooms.beds} beds filled` : "Live occupancy"}</small>
-                  </div>
-
-                </div>
-
+              <div className="trust-divider" />
+              <div className="trust-item">
+                <Phone size={16} />
+                <span>24/7 Support</span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* STATS */}
-        <section className="public-stats extreme-stats" aria-label="Live hostel statistics">
-
-          <div className="extreme-stat">
-            <div className="extreme-stat-icon indigo"><Users size={22} /></div>
-            <div>
-              <strong>{live ? `${live.students.total}+` : "\u2014"}</strong>
-              <span>Students</span>
-            </div>
+        {/* FEATURES SECTION */}
+        <section className="premium-features" id="features">
+          <div className="section-header">
+            <span className="section-eyebrow">What We Offer</span>
+            <h2>Everything you need for hostel life</h2>
+            <p>From check-in to check-out, every facility is just a tap away.</p>
           </div>
 
-          <div className="extreme-stat">
-            <div className="extreme-stat-icon blue"><BedDouble size={22} /></div>
-            <div>
-              <strong>{live ? live.rooms.total : "\u2014"}</strong>
-              <span>Rooms</span>
-            </div>
-          </div>
-
-          <div className="extreme-stat">
-            <div className="extreme-stat-icon green"><MessageSquareWarning size={22} /></div>
-            <div>
-              <strong>{live ? `${resolution}%` : "\u2014"}</strong>
-              <span>Complaints Resolved</span>
-            </div>
-          </div>
-
-          <div className="extreme-stat">
-            <div className="extreme-stat-icon amber"><CreditCard size={22} /></div>
-            <div>
-              <strong>{live ? formatINR(live.fees.paid) : "\u2014"}</strong>
-              <span>Fees Collected</span>
-            </div>
-          </div>
-
-        </section>
-
-        {/* FEATURES */}
-        <section className="public-features extreme-features" id="features">
-          <div className="public-section-heading extreme-features-head">
-
-            <span>POWERFUL FEATURES</span>
-
-            <h2>
-              Everything You Need
-              <br />
-              <span>To Manage Your Hostel</span>
-            </h2>
-
-            <p>
-              Manage your complete hostel operations from one
-              simple and modern dashboard.
-            </p>
-
-          </div>
-
-          <div className="feature-grid extreme-grid">
-
-            <div className="feature-card extreme-fi-1">
-              <div className="feature-icon">
-                <Users size={23} />
-              </div>
-
-              <h3>Student Management</h3>
-
-              <p>
-                Easily manage student registrations,
-                profiles and room information.
-              </p>
-            </div>
-
-            <div className="feature-card extreme-fi-2">
-              <div className="feature-icon">
-                <BedDouble size={23} />
-              </div>
-
-              <h3>Room Management</h3>
-
-              <p>
-                Track rooms, beds, occupancy and
-                availability in real time.
-              </p>
-            </div>
-
-            <div className="feature-card extreme-fi-3">
-              <div className="feature-icon">
-                <CreditCard size={23} />
-              </div>
-
-              <h3>Fees & Payments</h3>
-
-              <p>
-                Keep track of hostel fees, payments
-                and pending amounts.
-              </p>
-            </div>
-
-            <div className="feature-card extreme-fi-4">
-              <div className="feature-icon">
-                <MessageSquareWarning size={23} />
-              </div>
-
-              <h3>Complaints</h3>
-
-              <p>
-                Manage complaints and track their
-                resolution status easily.
-              </p>
-            </div>
-
-            <div className="feature-card extreme-fi-5">
-              <div className="feature-icon">
-                <Utensils size={23} />
-              </div>
-
-              <h3>Mess Management</h3>
-
-              <p>
-                Organize weekly menus and daily
-                hostel meal schedules.
-              </p>
-            </div>
-
-            <div className="feature-card extreme-fi-6">
-              <div className="feature-icon">
-                <Building2 size={23} />
-              </div>
-
-              <h3>Reports & Analytics</h3>
-
-              <p>
-                View hostel performance through
-                simple reports and analytics.
-              </p>
-            </div>
-
+          <div className="feature-grid">
+            <FeatureCard
+              icon={<BedDouble size={26} className="feature-icon" />}
+              title="Smart Room Allocation"
+              description="View your assigned room, bed details, amenities, and room photos. Track occupancy and request room changes."
+              imageKey="rooms"
+            />
+            <FeatureCard
+              icon={<Utensils size={26} className="feature-icon" />}
+              title="Mess & Meal Plans"
+              description="Daily breakfast, lunch, and dinner menus with photos. Rate food quality and share feedback with mess staff."
+              imageKey="mess"
+            />
+            <FeatureCard
+              icon={<BookOpen size={26} className="feature-icon" />}
+              title="Study Rooms & Library"
+              description="Book study spaces, check timings, and access Wi-Fi-enabled quiet zones for focused learning."
+              imageKey="study"
+            />
+            <FeatureCard
+              icon={<Dumbbell size={26} className="feature-icon" />}
+              title="Gym & Recreation"
+              description="Access gym facilities, view equipment, and reserve time slots for workouts and recreation."
+              imageKey="gym"
+            />
+            <FeatureCard
+              icon={<Shield size={26} className="feature-icon" />}
+              title="Medical & Emergency"
+              description="On-campus medical room, emergency contacts, nearby hospitals, and ambulance services — always ready."
+              imageKey="medical"
+            />
+            <FeatureCard
+              icon={<Wrench size={26} className="feature-icon" />}
+              title="Maintenance Requests"
+              description="Report issues with photos, track progress, and get quick resolutions from our maintenance team."
+              imageKey="housekeeping"
+            />
           </div>
         </section>
 
-        {/* ABOUT */}
-        <section
-          className="public-about extreme-about"
-          id="about"
-        >
-          <div className="about-card">
+        {/* CAMPUS FACILITIES GALLERY */}
+        <section className="premium-gallery" id="facilities">
+          <div className="section-header">
+            <span className="section-eyebrow">Campus Facilities</span>
+            <h2>Explore our campus</h2>
+            <p>Modern facilities designed for comfortable student living.</p>
+          </div>
 
-            <div className="about-icon">
-              <Building2 size={35} />
-            </div>
-
-            <div>
-              <span>ABOUT HOSTELHUB</span>
-
-              <h2>
-                A Better Way To Manage
-                <br />
-                Your Hostel
-              </h2>
-
-              <p>
-                HostelHub brings essential hostel management
-                activities together into one clean and easy-to-use
-                platform. From student registration to rooms,
-                payments, complaints and mess schedules,
-                everything can be managed from a single dashboard.
-              </p>
-
-              <button
-                className="about-btn"
-                onClick={onLogin}
-              >
-                Explore Dashboard
-                <ArrowRight size={17} />
-              </button>
-            </div>
-
+          <div className="gallery-grid">
+            <GalleryItem
+              key="rooms"
+              title="Hostel Rooms"
+              subtitle="Comfortable living spaces"
+              imageKey="rooms"
+              icon={<BedDouble size={20} />}
+            />
+            <GalleryItem
+              key="mess"
+              title="Mess & Dining"
+              subtitle="Hygienic, nutritious meals"
+              imageKey="mess"
+              icon={<Utensils size={20} />}
+            />
+            <GalleryItem
+              key="study"
+              title="Study Room"
+              subtitle="Quiet, Wi-Fi enabled space"
+              imageKey="study"
+              icon={<BookOpen size={20} />}
+            />
+            <GalleryItem
+              key="gym"
+              title="Gym & Fitness"
+              subtitle="Modern exercise equipment"
+              imageKey="gym"
+              icon={<Dumbbell size={20} />}
+            />
+            <GalleryItem
+              key="medical"
+              title="Medical Room"
+              subtitle="First-aid & health support"
+              imageKey="medical"
+              icon={<Shield size={20} />}
+            />
+            <GalleryItem
+              key="housekeeping"
+              title="Housekeeping"
+              subtitle="Clean & well-maintained"
+              imageKey="housekeeping"
+              icon={<Shirt size={20} />}
+            />
           </div>
         </section>
 
+        {/* WHY CHOOSE US */}
+        <section className="premium-why" id="why">
+          <div className="section-header">
+            <span className="section-eyebrow">Why HostelHub</span>
+            <h2>Trusted by students and administrators</h2>
+            <p>A platform built with care for hostel life.</p>
+          </div>
+
+          <div className="why-grid">
+            <WhyItem
+              icon={<GraduationCap size={24} className="why-icon" />}
+              title="Student-Centric Design"
+              description="Built for students — easy to use, mobile-friendly, and accessible on any device."
+            />
+            <WhyItem
+              icon={<Leaf size={24} className="why-icon" />}
+              title="Eco-Friendly Campus"
+              description="Nature-inspired design with green spaces, sustainability, and a healthy living environment."
+            />
+            <WhyItem
+              icon={<Droplets size={24} className="why-icon" />}
+              title="Real-Time Updates"
+              description="Leave status, maintenance progress, mess menus, and notices — always up to date."
+            />
+            <WhyItem
+              icon={<Calendar size={24} className="why-icon" />}
+              title="Transparent Tracking"
+              description="Track every request from submission to resolution with timestamps and admin remarks."
+            />
+          </div>
+        </section>
+
+        {/* CONTACT & EMERGENCY */}
+        <section className="premium-contact">
+          <div className="contact-grid">
+            <div className="contact-card">
+              <div className="contact-icon">
+                <Phone size={24} />
+              </div>
+              <div>
+                <h3>Hostel Warden</h3>
+                <p>24x7 emergency assistance</p>
+                <a href="tel:+919876501234" className="contact-link">+91 98765 01234</a>
+              </div>
+            </div>
+            <div className="contact-card">
+              <div className="contact-icon">
+                <Shield size={24} />
+              </div>
+              <div>
+                <h3>Security Office</h3>
+                <p>Main gate & entry/exit register</p>
+                <a href="tel:+919876506666" className="contact-link">+91 98765 06666</a>
+              </div>
+            </div>
+            <div className="contact-card">
+              <div className="contact-icon">
+                <Mail size={24} />
+              </div>
+              <div>
+                <h3>Email Support</h3>
+                <p>General inquiries & feedback</p>
+                <a href="mailto:support@hostelhub.example" className="contact-link">support@hostelhub.example</a>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       {/* FOOTER */}
-      <footer className="public-footer extreme-footer">
-
-        <div className="footer-brand">
-          <div className="public-brand-icon">
-            <Building2 size={22} />
+      <footer className="premium-footer">
+        <div className="footer-content">
+          <div className="footer-brand">
+            <div className="public-brand-icon premium-brand-icon">
+              <Building2 size={24} className="brand-icon" />
+            </div>
+            <div>
+              <h3 className="brand-name">HostelHub</h3>
+              <span className="brand-tag">Management System</span>
+            </div>
           </div>
 
-          <div>
-            <strong>HostelHub</strong>
-            <span>Management System</span>
+          <div className="footer-links-grid">
+            <div className="footer-link-group">
+              <h4>Platform</h4>
+              <a href="#features">Features</a>
+              <a href="#facilities">Campus Facilities</a>
+              <a href="#why">Why Choose Us</a>
+              <a href="#about">About</a>
+            </div>
+            <div className="footer-link-group">
+              <h4>Student Services</h4>
+              <a href="#">My Profile</a>
+              <a href="#">My Room</a>
+              <a href="#">Mess & Food</a>
+              <a href="#">Leave Applications</a>
+            </div>
+            <div className="footer-link-group">
+              <h4>Support</h4>
+              <a href="#">Maintenance</a>
+              <a href="#">Housekeeping</a>
+              <a href="#">Medical & Emergency</a>
+              <a href="#">Settings</a>
+            </div>
+            <div className="footer-link-group">
+              <h4>Admin</h4>
+              <a href="#">Dashboard</a>
+              <a href="#">Reports</a>
+              <a href="#">Notices</a>
+              <a href="#">Facilities</a>
+            </div>
           </div>
         </div>
 
-        <p>
-          © 2026 HostelHub. All rights reserved.
-        </p>
-
-        <div className="footer-links">
-          <button onClick={onLogin}>Login</button>
-          <button onClick={onSignup}>Sign Up</button>
+        <div className="footer-bottom">
+          <p className="creator-brand">
+            Designed &amp; Developed by <strong>TUSHAR CHAUDHARY</strong>
+          </p>
+          <p className="footer-copy">
+            © 2026 HostelHub. All rights reserved.
+          </p>
         </div>
-
       </footer>
+    </div>
+  );
+}
 
+/* ================= SUB-COMPONENTS ================= */
+
+function FeatureCard({ icon, title, description, imageKey }: { icon: JSX.Element; title: string; description: string; imageKey: string }) {
+  return (
+    <div className="feature-card premium">
+      <div className="feature-image">
+        <ImageWithFallback
+          src={FACILITY_IMAGES[imageKey]}
+          alt={title}
+          fallbackColor="var(--primary-soft)"
+        >
+          {icon}
+        </ImageWithFallback>
+      </div>
+      <div className="feature-body">
+        <h3>{title}</h3>
+        <p>{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function GalleryItem({ title, subtitle, imageKey, icon }: { title: string; subtitle: string; imageKey: string; icon: JSX.Element }) {
+  return (
+    <div className="gallery-item premium">
+      <div className="gallery-image">
+        <ImageWithFallback
+          src={FACILITY_IMAGES[imageKey]}
+          alt={title}
+          fallbackColor="var(--surface-3)"
+        >
+          {icon}
+        </ImageWithFallback>
+        <div className="gallery-overlay">
+          <div className="gallery-info">
+            <strong>{title}</strong>
+            <span>{subtitle}</span>
+          </div>
+          <ArrowRight size={16} className="gallery-arrow" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WhyItem({ icon, title, description }: { icon: JSX.Element; title: string; description: string }) {
+  return (
+    <div className="why-card premium">
+      <div className="why-icon-bg">{icon}</div>
+      <h3>{title}</h3>
+      <p>{description}</p>
     </div>
   );
 }

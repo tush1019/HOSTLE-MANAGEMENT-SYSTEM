@@ -16,6 +16,12 @@ const messRoutes = require("./mess");
 const facilityRoutes = require("./facilities");
 const noticeRoutes = require("./notices");
 const dashboardRoutes = require("./dashboard");
+const serviceRoutes = require("./services");
+const maintenanceRoutes = require("./maintenance");
+const leaveRoutes = require("./leave");
+const gymRoutes = require("./gym");
+const roomIssueRoutes = require("./room_issue");
+const profileRoutes = require("./profiles");
 
 const app = express();
 
@@ -108,6 +114,12 @@ app.use("/api/mess", messRoutes);
 app.use("/api/facilities", facilityRoutes);
 app.use("/api/notices", noticeRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/services", serviceRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
+app.use("/api/leave", leaveRoutes);
+app.use("/api/gym", gymRoutes);
+app.use("/api/room-issues", roomIssueRoutes);
+app.use("/api/profiles", profileRoutes);
 
 // 404 for unknown API routes
 app.use("/api", (req, res) => {

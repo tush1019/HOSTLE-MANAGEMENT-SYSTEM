@@ -7,6 +7,7 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const search = (req.query.search || "").trim();
+    const email = (req.query.email || "").trim();
 
     let sql = `SELECT id, student_code AS studentCode, name, email, phone,
                  course, room_number AS room, status, created_at AS createdAt
@@ -17,6 +18,10 @@ router.get("/", async (req, res) => {
       sql += ` WHERE name LIKE ? OR student_code LIKE ? OR room_number LIKE ? OR course LIKE ?`;
       const like = `%${search}%`;
       params.push(like, like, like, like);
+    }
+    if (email) {
+      sql += search ? ` AND LOWER(email) = LOWER(?)` : ` WHERE LOWER(email) = LOWER(?)`;
+      params.push(email);
     }
 
     sql += ` ORDER BY created_at DESC LIMIT 500`;

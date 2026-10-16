@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import {
   Users, BedDouble, CreditCard, MessageSquareWarning, Megaphone,
   ArrowUpRight, CircleAlert, Clock3, BedSingle, Wrench, BadgeCheck, TrendingUp,
+  BarChart3, UserCircle, Calendar, Utensils, ArrowRight,
 } from "lucide-react";
-import { api } from "../lib/api";
+import { api, getStoredUser } from "../lib/api";
 import { formatINR } from "../lib/format";
 
 type D = {
@@ -17,14 +18,65 @@ type D = {
   notices: { id: number; title: string; message: string; date: string }[];
 };
 
-function Dashboard({ role }: { role: "Admin" | "Student" }) {
+type LeaveRow = { leaveCode: string | null; startDate: string; endDate: string; reason: string; status: string };
+type MaintRow = { requestCode: string | null; title: string; status: string; priority: string };
+type TaskItem = { key: string; title: string; sub: string; status: string; page: string };
+
+function Dashboard({ role, onNavigate }: { role: "Admin" | "Student"; onNavigate: (page: string) => void }) {
   const [d, setD] = useState<D | null>(null);
   const [err, setErr] = useState("");
+  const [tasks, setTasks] = useState<TaskItem[] | null>(null);
   const load = async () => {
     try { setD(await api<D>("/dashboard")); }
     catch (e) { setErr(e instanceof Error ? e.message : "Failed"); }
   };
   useEffect(() => { load(); }, []);
+
+  /* Student pending tasks — own leave applications + open maintenance reports. */
+  useEffect(() => {
+    if (role !== "Student") return;
+    const user = getStoredUser();
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [leaves, maints] = await Promise.all([
+          api<LeaveRow[]>(`/leave?student=${encodeURIComponent(user.name)}`),
+          api<MaintRow[]>(`/maintenance?student=${encodeURIComponent(user.name)}`),
+        ]);
+        if (cancelled) return;
+        const items: TaskItem[] = [];
+        (leaves || [])
+          .filter((l) => l.status === "Pending")
+          .slice(0, 4)
+          .forEach((l) =>
+            items.push({
+              key: `leave-${l.leaveCode || l.startDate}`,
+              title: l.leaveCode || "Leave application",
+              sub: `Leave ${l.startDate} → ${l.endDate}`,
+              status: "Pending",
+              page: "Leave Management",
+            })
+          );
+        (maints || [])
+          .filter((m) => m.status !== "Resolved")
+          .slice(0, 4)
+          .forEach((m) =>
+            items.push({
+              key: `mnt-${m.requestCode || m.title}`,
+              title: m.requestCode || "Maintenance request",
+              sub: m.title,
+              status: m.status,
+              page: "Maintenance Request",
+            })
+          );
+        setTasks(items.slice(0, 6));
+      } catch {
+        if (!cancelled) setTasks(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [role]);
   if (err) return <section className="content"><div className="error-state">{err}<button onClick={load}>Retry</button></div></section>;
   if (!d) return <section className="content"><div className="skeleton-card"><div className="skeleton-line" style={{ width: "40%" }} /><div className="skeleton-line" style={{ width: "70%" }} /><div className="skeleton-line" style={{ width: "55%" }} /></div></section>;
   const max = Math.max(1, ...d.monthlyFees.map((m) => m.amount));
@@ -34,6 +86,23 @@ function Dashboard({ role }: { role: "Admin" | "Student" }) {
   const resolution = d.complaints.total > 0
     ? Math.round((d.complaints.resolved / d.complaints.total) * 100)
     : 0;
+  const quickActions = isAdmin
+    ? [
+        { label: "Students", icon: Users, page: "Students" },
+        { label: "Rooms", icon: BedDouble, page: "Rooms" },
+        { label: "Notices", icon: Megaphone, page: "Notices" },
+        { label: "Fees", icon: CreditCard, page: "Fees" },
+        { label: "Reports", icon: BarChart3, page: "Reports" },
+        { label: "Complaints", icon: MessageSquareWarning, page: "Complaints" },
+      ]
+    : [
+        { label: "My Profile", icon: UserCircle, page: "Profile" },
+        { label: "Apply Leave", icon: Calendar, page: "Leave Management" },
+        { label: "Maintenance", icon: Wrench, page: "Maintenance Request" },
+        { label: "Mess Menu", icon: Utensils, page: "Mess" },
+        { label: "Notices", icon: Megaphone, page: "Notices" },
+        { label: "My Fees", icon: CreditCard, page: "Fees" },
+      ];
   return (
     <section className="content">
       <div className="page-heading admin-heading">
@@ -47,6 +116,70 @@ function Dashboard({ role }: { role: "Admin" | "Student" }) {
           <span className="admin-pill warn"><Clock3 size={14} /> {d.fees.pendingCount} fees pending</span>
         </div>
       </div>
+      <div className="qa-strip" role="list">
+        {quickActions.map((a) => (
+          <button
+            type="button"
+            key={a.label}
+            className="qa-card"
+            role="listitem"
+            onClick={() => onNavigate(a.page)}
+          >
+            <span className="qa-icon"><a.icon size={18} /></span>
+            <span className="qa-label">{a.label}</span>
+            <ArrowRight size={14} className="qa-arrow" />
+          </button>
+        ))}
+      </div>
+      {!isAdmin && tasks && (
+        <div className="dashboard-card sp-tasks">
+          <div className="table-header">
+            <div>
+              <h3>Pending Tasks</h3>
+              <p>
+                {tasks.length === 0
+                  ? "Nothing waiting on you"
+                  : `${tasks.length} item${tasks.length === 1 ? "" : "s"} need attention`}
+              </p>
+            </div>
+          </div>
+          {tasks.length === 0 ? (
+            <div className="empty-state">
+              <BadgeCheck size={26} />
+              <strong>You're all caught up 🎉</strong>
+              <p>No pending leave or maintenance items.</p>
+            </div>
+          ) : (
+            <div className="sp-task-list">
+              {tasks.map((t) => (
+                <button
+                  type="button"
+                  key={t.key}
+                  className="sp-task-row"
+                  onClick={() => onNavigate(t.page)}
+                  title={`Open ${t.page}`}
+                >
+                  <span className={t.status === "Pending" ? "sp-task-dot" : "sp-task-dot sp-task-dot-active"} />
+                  <span className="sp-task-text">
+                    <strong>{t.title}</strong>
+                    <small>{t.sub}</small>
+                  </span>
+                  <span
+                    className={
+                      t.status === "Pending"
+                        ? "complaint-status complaint-pending"
+                        : "complaint-status complaint-progress"
+                    }
+                  >
+                    {t.status}
+                  </span>
+                  <ArrowRight size={14} className="qa-arrow" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       <div className="stats-grid admin-stats">
         <div className="stat-card stat-tint-indigo">
           <div className="stat-icon"><Users size={22} /></div>

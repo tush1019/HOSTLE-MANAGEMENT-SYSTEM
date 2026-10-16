@@ -82,7 +82,13 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
     try {
       const data = await postJson<{ message: string; user: { name: string } }>(
         `${API_BASE_URL}/auth/register`,
-        { name: name.trim(), email: email.trim(), password, role }
+        {
+          name: name.trim(),
+          email: email.trim(),
+          password,
+          role,
+          ...(role === "Admin" ? { passkey: passkey.trim() } : {}),
+        }
       );
       setCreatedName(data.user?.name || name.trim());
       setInfo(data.message);

@@ -114,7 +114,14 @@ function Navbar({ activePage, onSearch, onNavigate }: NavbarProps) {
             </div>
           )}
         </div>
-        <div className="profile">
+        <div
+          className="profile"
+          onClick={() => {
+            if (user?.role === "Student") onNavigate("Profile");
+          }}
+          style={{ cursor: user?.role === "Student" ? "pointer" : "default" }}
+          title={user?.role === "Student" ? "Open my profile" : undefined}
+        >
           <UserCircle size={38} />
           <div>
             <strong>{user?.name || "Admin"}</strong>

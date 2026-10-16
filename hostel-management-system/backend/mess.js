@@ -3,6 +3,58 @@ const db = require("./db");
 
 const router = express.Router();
 
+/* GET /api/mess/photos  — mess photos with food quality ratings */
+router.get("/photos", async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT id, title, photo, food_quality AS foodQuality, comment,
+              created_at AS createdAt
+       FROM mess_photos
+       ORDER BY created_at DESC LIMIT 200`
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error("Mess photos list error:", error);
+    res.status(500).json({ success: false, message: "Failed to load mess photos" });
+  }
+});
+
+/* POST /api/mess/photos  { title, photo, foodQuality, comment }  (Student uploads mess photo + rates food) */
+router.post("/photos", async (req, res) => {
+  try {
+    const { title, photo, foodQuality, comment } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ success: false, message: "Title is required" });
+    }
+    if (!photo || !photo.trim()) {
+      return res.status(400).json({ success: false, message: "Photo is required" });
+    }
+
+    const quality = foodQuality != null ? Number(foodQuality) : null;
+    if (quality != null && (quality < 1 || quality > 5)) {
+      return res.status(400).json({ success: false, message: "Food quality must be between 1 and 5" });
+    }
+
+    const [result] = await db.query(
+      `INSERT INTO mess_photos (title, photo, food_quality, comment)
+       VALUES (?, ?, ?, ?)`,
+      [title.trim(), photo.trim(), quality, comment ? comment.trim() : null]
+    );
+
+    const [rows] = await db.query(
+      `SELECT id, title, photo, food_quality AS foodQuality, comment, created_at AS createdAt
+       FROM mess_photos WHERE id = ?`,
+      [result.insertId]
+    );
+
+    res.status(201).json({ success: true, message: "Mess photo uploaded", data: rows[0] });
+  } catch (error) {
+    console.error("Mess photo create error:", error);
+    res.status(500).json({ success: false, message: "Failed to upload mess photo" });
+  }
+});
+
 /* GET /api/mess */
 router.get("/", async (req, res) => {
   try {

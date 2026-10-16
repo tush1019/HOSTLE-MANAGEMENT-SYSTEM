@@ -1,15 +1,24 @@
-/* HostelHub theme variables + shared modern components */
+/* HostelHub theme variables — Nature-inspired premium palette */
 
+/* Light mode — warm neutrals with emerald green accents */
 :root {
-  --bg: #f5f7fb;
+  --bg: #fbfdfa;
   --surface: #ffffff;
-  --surface-2: #f8fafc;
-  --border: #e5e7eb;
-  --text: #1e293b;
-  --text-muted: #64748b;
-  --text-faint: #2a5591;
-  --primary: #4f46e5;
-  --primary-soft: #eef2ff;
+  --surface-2: #f4faf4;
+  --surface-3: #eef6ee;
+  --border: #d8e4d8;
+  --border-soft: #e8f0e8;
+  --text: #1b3a2e;
+  --text-muted: #4a6b5a;
+  --text-faint: #8aa89a;
+  --text-inverse: #ffffff;
+
+  /* Nature-inspired emerald green primary */
+  --primary: #059669;
+  --primary-hover: #047857;
+  --primary-soft: #dcfce7;
+  --primary-glass: rgba(5, 150, 105, 0.08);
+
   --success: #16a34a;
   --success-soft: #dcfce7;
   --warning: #d97706;
@@ -18,29 +27,60 @@
   --danger-soft: #fee2e2;
   --info: #0284c7;
   --info-soft: #e0f2fe;
-  --shadow: 0 4px 15px rgba(15, 23, 42, 0.06);
-  --radius: 14px;
+
+  /* Accent colors for theme options */
+  --accent-emerald: #059669;
+  --accent-blue: #0284c7;
+  --accent-purple: #7c3aed;
+  --accent-teal: #0d9488;
+  --accent-neutral: #4b5563;
+
+  --shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+  --shadow-strong: 0 8px 40px rgba(15, 23, 42, 0.12);
+  --radius: 16px;
+  --radius-lg: 24px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Dark mode — deep forest tones */
 [data-theme="dark"] {
-  --bg: #0f172a;
-  --surface: #1e293b;
-  --surface-2: #16213a;
-  --border: #334155;
-  --text: #f1f5f9;
-  --text-muted: #94a3b8;
-  --text-faint: #64748b;
-  --primary: #818cf8;
-  --primary-soft: rgba(129, 140, 248, 0.14);
+  --bg: #0b1610;
+  --surface: #122018;
+  --surface-2: #162a1e;
+  --surface-3: #1d3a28;
+  --border: #2d4a3a;
+  --border-soft: #253b2d;
+  --text: #e8f5e9;
+  --text-muted: #a7c9b7;
+  --text-faint: #6b8b7a;
+  --text-inverse: #ffffff;
+
+  --primary: #34d399;
+  --primary-hover: #6ee7b7;
+  --primary-soft: rgba(52, 211, 153, 0.15);
+  --primary-glass: rgba(5, 150, 105, 0.2);
+
   --success-soft: rgba(22, 163, 74, 0.18);
   --warning-soft: rgba(217, 119, 6, 0.18);
   --danger-soft: rgba(220, 38, 38, 0.2);
   --info-soft: rgba(2, 132, 199, 0.2);
-  --shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-strong: 0 8px 40px rgba(0, 0, 0, 0.5);
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  transition: background 0.25s ease, color 0.25s ease;
+  transition: background 0.3s ease, color 0.3s ease;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
+
+/* Utility: accent color override (applied via data-accent on root) */
+[data-accent="blue"] { --primary: #0284c7; --primary-hover: #0369a1; --primary-soft: #e0f2fe; }
+[data-accent="purple"] { --primary: #7c3aed; --primary-hover: #6d28d9; --primary-soft: #f3e8ff; }
+[data-accent="teal"] { --primary: #0d9488; --primary-hover: #0f766e; --primary-soft: #ccfbf1; }
+[data-accent="neutral"] { --primary: #4b5563; --primary-hover: #374151; --primary-soft: #f3f4f6; }
+
+/* Restore emerald on reset */
+[data-accent="emerald"] { --primary: #059669; --primary-hover: #047857; --primary-soft: #dcfce7; }

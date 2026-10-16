@@ -10,6 +10,8 @@ import "./theme-layout.css";
 import "./theme-polish.css";
 import "./theme-admin.css";
 import "./theme-extreme.css";
+import "./home.css";
+import "./student.css";
 import { ToastProvider } from "./components/Toast";
 
 /* Apply saved theme before first paint */

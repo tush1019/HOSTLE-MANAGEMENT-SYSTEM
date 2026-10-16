@@ -16,6 +16,20 @@ import Notices from "./pages/Notices";
 import Reports from "./pages/Reports";
 import Facilities from "./pages/Facilities";
 import Settings from "./pages/Settings";
+import EmergencyContacts from "./pages/EmergencyContacts";
+import MedicalFacilities from "./pages/MedicalFacilities";
+import WifiInfo from "./pages/WifiInfo";
+import LaundryServices from "./pages/LaundryServices";
+import StudyRoom from "./pages/StudyRoom";
+import WaterElectricity from "./pages/WaterElectricity";
+import Housekeeping from "./pages/Housekeeping";
+import EntryExitRules from "./pages/EntryExitRules";
+import MaintenanceRequest from "./pages/MaintenanceRequest";
+import LeaveManagement from "./pages/LeaveManagement";
+import MessPhotos from "./pages/MessPhotos";
+import GymPhotos from "./pages/GymPhotos";
+import RoomIssuePhotos from "./pages/RoomIssuePhotos";
+import StudentProfile from "./pages/StudentProfile";
 
 type Role = "Admin" | "Student" | null;
 type PublicPage = "Home" | "Login" | "Signup";
@@ -91,7 +105,8 @@ function App() {
       />
       <main className="main-content">
         <Navbar activePage={activePage} onSearch={handleSearch} onNavigate={goPage} />
-        {activePage === "Dashboard" && <Dashboard role={role!} />}
+        {activePage === "Dashboard" && <Dashboard role={role!} onNavigate={goPage} />}
+        {activePage === "Profile" && <StudentProfile />}
         {activePage === "Students" && <Students search={globalSearch} role={role} />}
         {activePage === "Rooms" && <Rooms search={globalSearch} />}
         {activePage === "Fees" && <Fees search={globalSearch} role={role} />}
@@ -101,6 +116,19 @@ function App() {
         {activePage === "Facilities" && <Facilities />}
         {activePage === "Reports" && <Reports />}
         {activePage === "Settings" && <Settings />}
+        {activePage === "Emergency Contacts" && <EmergencyContacts />}
+        {activePage === "Medical Facilities" && <MedicalFacilities />}
+        {activePage === "WiFi Information" && <WifiInfo />}
+        {activePage === "Laundry Services" && <LaundryServices />}
+        {activePage === "Study Room" && <StudyRoom />}
+        {activePage === "Water & Electricity" && <WaterElectricity />}
+        {activePage === "Housekeeping" && <Housekeeping />}
+        {activePage === "Entry & Exit Rules" && <EntryExitRules />}
+        {activePage === "Maintenance Request" && <MaintenanceRequest role={role!} />}
+        {activePage === "Leave Management" && <LeaveManagement role={role!} />}
+        {activePage === "Mess Photos" && <MessPhotos role={role!} />}
+        {activePage === "Gym Photos" && <GymPhotos />}
+        {activePage === "Room Issue Photos" && <RoomIssuePhotos />}
       </main>
     </div>
   );

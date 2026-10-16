@@ -82,6 +82,21 @@ async function createSqliteFallback() {
     );
   `);
 
+  /* Account-specific profile data (avatar, cover photo, editable details).
+     Shared DDL works on both SQLite and MySQL (TEXT-affinity MEDIUMTEXT). */
+  db.run(`
+    CREATE TABLE IF NOT EXISTS user_profiles (
+      user_id INT NOT NULL PRIMARY KEY,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      phone VARCHAR(30) NULL,
+      bio TEXT NULL,
+      address VARCHAR(255) NULL,
+      profile_photo MEDIUMTEXT NULL,
+      cover_photo MEDIUMTEXT NULL,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
   db.run(`
     CREATE TABLE IF NOT EXISTS rooms (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -219,6 +234,108 @@ async function createSqliteFallback() {
       ('Welcome to HostelHub', 'Mess timings: Breakfast 8 AM, Lunch 1 PM, Dinner 8 PM. Contact the warden for any help.', 'All');
   `);
 
+  /* New student-panel service tables */
+  db.run(`
+    CREATE TABLE IF NOT EXISTS hostel_services (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category TEXT NOT NULL DEFAULT 'General' CHECK (category IN ('Emergency Contact', 'Medical Facilities', 'WiFi Information', 'Laundry Services', 'Study Room', 'Water & Electricity', 'Housekeeping', 'Entry & Exit Rules')),
+      title TEXT NOT NULL,
+      details TEXT NULL,
+      contact_name TEXT NULL,
+      contact_phone TEXT NULL,
+      photo TEXT NULL,
+      status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive')),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS maintenance_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      request_code TEXT UNIQUE,
+      student_name TEXT NOT NULL,
+      room_number TEXT NULL,
+      title TEXT NOT NULL,
+      description TEXT NULL,
+      photo TEXT NULL,
+      priority TEXT NOT NULL DEFAULT 'Medium' CHECK (priority IN ('Low', 'Medium', 'High')),
+      status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'In Progress', 'Resolved')),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS leave_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      leave_code TEXT UNIQUE,
+      student_name TEXT NOT NULL,
+      room_number TEXT NULL,
+      reason TEXT NOT NULL,
+      start_date DATE NOT NULL,
+      end_date DATE NOT NULL,
+      status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Approved', 'Rejected')),
+      admin_remarks TEXT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS mess_photos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      photo TEXT NULL,
+      food_quality INTEGER NULL CHECK (food_quality BETWEEN 1 AND 5),
+      comment TEXT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS gym_photos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      photo TEXT NULL,
+      description TEXT NULL,
+      equipment_type TEXT NULL,
+      status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Maintenance')),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS room_issue_photos (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      room_number TEXT NULL,
+      title TEXT NOT NULL,
+      photo TEXT NULL,
+      description TEXT NULL,
+      status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Resolved')),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  /* Seed hostel services (SQLite fallback, only when empty) */
+  db.run(`
+    INSERT OR IGNORE INTO hostel_services (category, title, details, contact_name, contact_phone, status) VALUES
+      ('Emergency Contact', 'Hostel Warden (24x7)', 'Emergency warden contact for any urgent hostel issue — nights, weekends & holidays.', 'Mr. R. Singh', '9876501234', 'Active'),
+      ('Emergency Contact', 'Security Office', 'Main gate security — entry/exit register, visitor escort, night patrol.', 'Security Head', '9876506666', 'Active'),
+      ('Emergency Contact', 'Nearest Hospital', 'City General Hospital — 24x7 emergency, ambulance on call.', 'Hospital Reception', '9876507777', 'Active'),
+      ('Medical Facilities', 'Hostel Medical Room', 'First-aid room on Ground Floor. Basic medicines, BP check, thermometer available 8 AM – 8 PM.', 'Nurse on Duty', '9876508888', 'Active'),
+      ('Medical Facilities', 'Doctor Visit Schedule', 'Visiting doctor: Mon–Sat 5–7 PM. Emergency cases referred to City General Hospital.', 'Medical Officer', '9876508888', 'Active'),
+      ('WiFi Information', 'Hostel WiFi Network', 'Network: HostelHub_Student. Password posted on notice board. Covers all rooms, mess, study room & gym.', 'IT Support', '9876509999', 'Active'),
+      ('WiFi Information', 'WiFi Support', 'Slow connection or no signal? Report via Maintenance Request with room number.', 'IT Support', '9876509999', 'Active'),
+      ('Laundry Services', 'Laundry Room', 'Ground Floor near Boys Wing. Washing machines 6 AM – 10 PM daily. Coin-operated / app payment.', 'Laundry In-charge', '9876501010', 'Active'),
+      ('Laundry Services', 'Laundry Rules', 'Clothes must be collected same day. Delicate items at own risk. Lost items not responsibility of hostel.', 'Laundry In-charge', '9876501010', 'Active'),
+      ('Study Room', 'Study Room (24x7)', 'First Floor Library Hall. Silent zone, power sockets at every table, AC, drinking water nearby.', 'Librarian', '9876501112', 'Active'),
+      ('Study Room', 'Study Room Rules', 'No food, no phone calls, keep silence. Seating first-come-first-served. Lights off by 11:30 PM.', 'Librarian', '9876501112', 'Active'),
+      ('Water & Electricity', 'Water Supply', 'RO filtered water available on all floors. Hot water 6–9 AM & 6–9 PM (winter schedule).', 'Maintenance Supervisor', '9876501212', 'Active'),
+      ('Water & Electricity', 'Electricity / Power', 'Power backup (inverter) in all rooms. Report outage via Maintenance Request.', 'Electrician', '9876501313', 'Active'),
+      ('Housekeeping', 'Room Cleaning Schedule', 'Rooms cleaned Mon/Wed/Fri. Washrooms cleaned daily 7–9 AM. Deep cleaning every Sunday.', 'Cleaning Supervisor', '9876503333', 'Active'),
+      ('Housekeeping', 'Request Extra Cleaning', 'Need extra cleaning or fresh linen? Raise a Housekeeping request below.', 'Cleaning Supervisor', '9876503333', 'Active'),
+      ('Entry & Exit Rules', 'Gate Timings', 'Main gate closes 9:30 PM. Late entry needs warden approval. No entry after 11 PM without prior permission.', 'Security Head', '9876506666', 'Active'),
+      ('Entry & Exit Rules', 'Visitor Rules', 'Visitors allowed 4–6 PM in visitor lounge only. Must show ID and sign register. Girls wing entry with warden approval.', 'Security Head', '9876506666', 'Active');
+  `);
+
   return db;
 }
 
@@ -251,6 +368,25 @@ async function ensurePremiumRoomColumns(pool) {
   }
 }
 
+/* Ensure the account profile table exists on MySQL (safe, runs once per boot). */
+async function ensureUserProfileTable(pool) {
+  try {
+    await pool.query(`CREATE TABLE IF NOT EXISTS user_profiles (
+      user_id INT NOT NULL PRIMARY KEY,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      phone VARCHAR(30) NULL,
+      bio TEXT NULL,
+      address VARCHAR(255) NULL,
+      profile_photo MEDIUMTEXT NULL,
+      cover_photo MEDIUMTEXT NULL,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+    console.log("[db] Verified table: user_profiles");
+  } catch (error) {
+    console.warn("user_profiles table migration skipped:", error.message);
+  }
+}
+
 async function getPool() {
   if (mysqlPool) return mysqlPool;
 
@@ -268,6 +404,7 @@ async function getPool() {
   try {
     await mysqlPool.query("SELECT 1 AS connected");
     await ensurePremiumRoomColumns(mysqlPool);
+    await ensureUserProfileTable(mysqlPool);
     return mysqlPool;
   } catch (error) {
     mysqlPool = null;

@@ -1,0 +1,1 @@
+require('dotenv').config(); const { sendOtpEmail } = require('./mailer'); sendOtpEmail('tusharchaudhary723@gmail.com','Tushar','123456').then(()=>{console.log('SENT-OK');process.exit(0)}).catch(e=>{console.error('SEND-FAIL:',e.message); if(e.response) console.error('SMTP-RESP:',e.response); process.exit(1)});
