@@ -17,6 +17,7 @@ import Mess from "./pages/Mess";
 import Notices from "./pages/Notices";
 import Reports from "./pages/Reports";
 import Facilities from "./pages/Facilities";
+import FacultyRooms from "./pages/FacultyRooms";
 import Settings from "./pages/Settings";
 import EmergencyContacts from "./pages/EmergencyContacts";
 import MedicalFacilities from "./pages/MedicalFacilities";
@@ -37,7 +38,7 @@ type Role = "Admin" | "Student" | null;
 type PublicPage = "Home" | "Login" | "Signup";
 
 const ADMIN_ONLY_ROUTES = new Set([
-  "Students", "Rooms", "Fees", "Reports", "Settings", "Campus Gallery",
+  "Students", "Rooms", "Fees", "Reports", "Settings", "Campus Gallery", "Faculty Rooms",
   "Leave Management", "Maintenance Request", "Mess", "Housekeeping",
   "Water & Electricity", "Notices", "Medical Facilities", "Study Room",
 ]);
@@ -182,6 +183,7 @@ function App() {
         {activePage === "Mess" && <Mess search={globalSearch} role={role} />}
         {activePage === "Notices" && <Notices role={role} />}
         {activePage === "Facilities" && <Facilities />}
+{activePage === "Faculty Rooms" && <FacultyRooms />}
         {activePage === "Reports" && <Reports />}
         {activePage === "Settings" && <Settings />}
         {activePage === "Emergency Contacts" && <EmergencyContacts />}

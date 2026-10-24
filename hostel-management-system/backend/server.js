@@ -24,6 +24,7 @@ const roomIssueRoutes = require("./room_issue");
 const profileRoutes = require("./profiles");
 const campusGalleryRoutes = require("./campus_gallery");
 const settingsRoutes = require("./settings");
+const facultyRoomRoutes = require("./faculty_rooms");
 
 const app = express();
 
@@ -124,6 +125,7 @@ app.use("/api/room-issues", roomIssueRoutes);
 app.use("/api/profiles", profileRoutes);
 app.use("/api/campus-gallery", campusGalleryRoutes);
 app.use("/api/settings", settingsRoutes);
+app.use("/api/faculty-rooms", facultyRoomRoutes);
 
 // 404 for unknown API routes
 app.use("/api", (req, res) => {

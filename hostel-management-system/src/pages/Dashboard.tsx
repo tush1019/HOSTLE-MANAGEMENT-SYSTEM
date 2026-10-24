@@ -257,6 +257,42 @@ function Dashboard({ role, onNavigate }: { role: "Admin" | "Student"; onNavigate
             d.notices.slice(0, 3).map((n) => (<div key={n.id} className="notice-card" style={{ boxShadow: "none" }}><div className="notice-icon"><Megaphone size={18} /></div><div><h4>{n.title}</h4><p>{n.message}</p><span className="notice-date">{n.date}</span></div></div>))}
         </div>
       </div>
+      <div className="dashboard-card" style={{ marginTop: 16 }}>
+        <div className="table-header"><div><h3>System Flowchart & ER Diagram</h3><p>Core entities and their relationships</p></div></div>
+        <div style={{ overflowX: "auto", padding: 12 }}>
+          <svg width="720" height="360" viewBox="0 0 720 360" style={{ maxWidth: "100%" }}>
+            <defs>
+              <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#6366f1" /></marker>
+            </defs>
+            {[
+              { x: 40, y: 40, w: 120, h: 60, label: "Student", color: "#6366f1" },
+              { x: 220, y: 40, w: 120, h: 60, label: "Room", color: "#10b981" },
+              { x: 400, y: 40, w: 120, h: 60, label: "Faculty", color: "#f59e0b" },
+              { x: 580, y: 40, w: 120, h: 60, label: "Warden", color: "#ef4444" },
+              { x: 40, y: 200, w: 120, h: 60, label: "Fees", color: "#8b5cf6" },
+              { x: 220, y: 200, w: 120, h: 60, label: "Complaint", color: "#ec4899" },
+              { x: 400, y: 200, w: 120, h: 60, label: "Mess", color: "#14b8a6" },
+              { x: 580, y: 200, w: 120, h: 60, label: "Notice", color: "#0ea5e9" },
+            ].map((n) => (
+              <g key={n.label}>
+                <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="10" fill={n.color} opacity="0.15" stroke={n.color} strokeWidth="2" />
+                <text x={n.x + n.w / 2} y={n.y + n.h / 2 + 5} textAnchor="middle" fontSize="14" fontWeight="600" fill={n.color}>{n.label}</text>
+              </g>
+            ))}
+            {[
+              [100, 100, 280, 70],
+              [160, 70, 400, 70],
+              [340, 70, 580, 70],
+              [100, 100, 100, 200],
+              [280, 100, 280, 200],
+              [460, 100, 460, 200],
+              [640, 100, 640, 200],
+            ].map((l, i) => (
+              <line key={i} x1={l[0]} y1={l[1]} x2={l[2]} y2={l[3]} stroke="#6366f1" strokeWidth="1.5" markerEnd="url(#arrow)" opacity="0.6" />
+            ))}
+          </svg>
+        </div>
+      </div>
     </section>
   );
 }
