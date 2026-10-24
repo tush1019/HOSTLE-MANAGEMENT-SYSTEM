@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { API_BASE_URL } from "../lib/api";
 import { ADMIN_PASSKEY } from "../lib/constants";
+import heroImage from "../assets/hero.png";
 
 type SignupProps = { onSignup: () => void; onLogin: () => void; onBackHome: () => void };
 type Step = "details" | "otp" | "success";
@@ -129,6 +130,9 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
         <div className="signup-brand">
           <div className="signup-logo"><Building2 size={30} /></div>
           <div><h1>HostelHub</h1><span>Management System</span></div>
+          <div className="signup-brand-image" aria-hidden="true">
+            <img src={heroImage} alt="Hostel campus" loading="lazy" decoding="async" />
+          </div>
         </div>
         <div className="signup-welcome">
           <h2>Join HostelHub<br />in seconds.</h2>

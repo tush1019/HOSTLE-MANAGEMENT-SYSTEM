@@ -1,0 +1,73 @@
+﻿
+    /* ---------------- rooms ---------------- */
+    const room = await check(
+      "rooms CREATE", "POST", "/api/rooms",
+      { room: "S901", floor: "Ground Floor", type: "2 Seater", capacity: 2, occupied: 0, status: "Available", wing: "Boys", category: "Standard", washroom: "Common", amenities: "Bed, Fan", monthlyRent: 4000 },
+      201, gotId
+    );
+    if (room && room.data) {
+      await check("rooms UPDATE", "PUT", `/api/rooms/${room.data.id}`,
+        { room: "S901", floor: "First Floor", type: "2 Seater", capacity: 2, occupied: 1, status: "Occupied", wing: "Boys", category: "Deluxe", washroom: "Attached", amenities: "Bed, AC", monthlyRent: 5500 },
+        200, has("floor"));
+      await check("rooms DELETE", "DELETE", `/api/rooms/${room.data.id}`, undefined, 200, okMsg);
+    }
+
+    /* ---------------- fees ---------------- */
+    const fee = await check(
+      "fees CREATE", "POST", "/api/fees",
+      { student: "Smoke Student", room: "101", amount: 4500, date: "2026-01-15", method: "UPI", status: "Paid", roomCharge: 4000, electricityCharge: 200, foodCharge: 0, cleaningCharge: 300, otherCharge: 0 },
+      201, gotId
+    );
+    if (fee && fee.data) {
+      await check("fees DELETE", "DELETE", `/api/fees/${fee.data.id}`, undefined, 200, okMsg);
+    }
+
+
+    /* ---------------- complaints ---------------- */
+    const comp = await check(
+      "complaints CREATE", "POST", "/api/complaints",
+      { student: "Smoke Student", room: "101", subject: "Smoke complaint", description: "test", priority: "Medium", status: "Pending" },
+      201, gotId
+    );
+    if (comp && comp.data) {
+      await check("complaints UPDATE", "PUT", `/api/complaints/${comp.data.id}`,
+        { student: "Smoke Student", room: "101", subject: "Smoke complaint", description: "test", priority: "High", status: "Resolved" },
+        200, okMsg);
+      await check("complaints DELETE", "DELETE", `/api/complaints/${comp.data.id}`, undefined, 200, okMsg);
+    }
+
+    /* ---------------- notices ---------------- */
+    const notice = await check(
+      "notices CREATE", "POST", "/api/notices",
+      { title: "Smoke notice", message: "hello", audience: "All" },
+      201, gotId
+    );
+    if (notice && notice.data) {
+      await check("notices DELETE", "DELETE", `/api/notices/${notice.data.id}`, undefined, 200, okMsg);
+    }
+
+    /* ---------------- facilities ---------------- */
+    const fac = await check(
+      "facilities CREATE", "POST", "/api/facilities",
+      { category: "General", title: "Smoke facility", details: "test", contactName: "X", contactPhone: "123", status: "Active" },
+      201, gotId
+    );
+    if (fac && fac.data) {
+      await check("facilities UPDATE", "PUT", `/api/facilities/${fac.data.id}`,
+        { category: "General", title: "Smoke facility 2", details: "test", contactName: "Y", contactPhone: "456", status: "Active" },
+        200, okMsg);
+      await check("facilities DELETE", "DELETE", `/api/facilities/${fac.data.id}`, undefined, 200, okMsg);
+
+    /* ---------------- mess menu (update) ---------------- */
+    await check("mess PUT menu", "PUT", "/api/mess/Monday",
+      { breakfast: "Smoke Poha", lunch: "Smoke Dal", dinner: "Smoke Paneer", status: "Published" },
+      200, okMsg);
+    await check("mess PATCH status", "PATCH", "/api/mess/Monday/status", { status: "Pending" }, 200, okMsg);
+
+    /* ---------------- photo-based creates ---------------- */
+    const mp = await check(
+      "mess photos CREATE", "POST", "/api/mess/photos",
+      { title: "Smoke mess photo", photo: TINY_PNG, foodQuality: 4, comment: "tasty" },
+      201, gotId
+    );
+    const gp = await check(

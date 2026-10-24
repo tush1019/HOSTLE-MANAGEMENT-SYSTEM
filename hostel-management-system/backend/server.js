@@ -22,6 +22,8 @@ const leaveRoutes = require("./leave");
 const gymRoutes = require("./gym");
 const roomIssueRoutes = require("./room_issue");
 const profileRoutes = require("./profiles");
+const campusGalleryRoutes = require("./campus_gallery");
+const settingsRoutes = require("./settings");
 
 const app = express();
 
@@ -37,7 +39,7 @@ app.use(
   cors({
     origin: [FRONTEND_URL, "http://localhost:5173", "http://127.0.0.1:5173"],
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-user-id", "x-user-email"],
   })
 );
 app.use(express.json({ limit: "1mb" }));
@@ -120,6 +122,8 @@ app.use("/api/leave", leaveRoutes);
 app.use("/api/gym", gymRoutes);
 app.use("/api/room-issues", roomIssueRoutes);
 app.use("/api/profiles", profileRoutes);
+app.use("/api/campus-gallery", campusGalleryRoutes);
+app.use("/api/settings", settingsRoutes);
 
 // 404 for unknown API routes
 app.use("/api", (req, res) => {

@@ -1,5 +1,10 @@
-/* Shared app constants used across auth screens. */
+/* Shared app constants used across auth screens.
 
-/* Admin passkey — env override or built-in default (6 digits). */
-export const ADMIN_PASSKEY =
-  (import.meta.env.VITE_ADMIN_PASSKEY as string) || "484950";
+   NOTE: The admin passkey is validated only by the backend (see
+   backend/auth.js, ADMIN_PASSKEY from backend/.env). It must never
+   be hardcoded or compared in frontend source code. The frontend
+   simply collects the passkey from the admin and sends it to the
+   server for verification.
+*/
+
+export const APP_NAME = "HostelHub";

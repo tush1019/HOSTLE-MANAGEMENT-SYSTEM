@@ -47,6 +47,7 @@ async function createSqliteFallback() {
       email TEXT NOT NULL UNIQUE,
       password TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'Student' CHECK (role IN ('Admin', 'Student')),
+      admin_id TEXT UNIQUE,
       email_verified INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -336,6 +337,15 @@ async function createSqliteFallback() {
       ('Entry & Exit Rules', 'Visitor Rules', 'Visitors allowed 4–6 PM in visitor lounge only. Must show ID and sign register. Girls wing entry with warden approval.', 'Security Head', '9876506666', 'Active');
   `);
 
+  /* Campus gallery (published campus photographs managed by admins). */
+  db.run(`\n    CREATE TABLE IF NOT EXISTS campus_gallery (\n      id INTEGER PRIMARY KEY AUTOINCREMENT,\n      title VARCHAR(200) NOT NULL,\n      description TEXT NULL,\n      category VARCHAR(50) NOT NULL DEFAULT 'General',\n      image_url VARCHAR(2000) NULL,\n      image_data MEDIUMTEXT NULL,\n      display_order INT NOT NULL DEFAULT 0,\n      is_published INT NOT NULL DEFAULT 1,\n      is_cover INT NOT NULL DEFAULT 0,\n      created_by INT NULL,\n      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n    );\n  `);
+
+  /* Persistent application settings (admin only). */
+  db.run(`\n    CREATE TABLE IF NOT EXISTS app_settings (\n      setting_key VARCHAR(100) NOT NULL PRIMARY KEY,\n      setting_value TEXT NULL,\n      updated_by INT NULL,\n      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n    );\n  `);
+
+  /* Per-user display preferences (theme, accent, layout, notifications). */
+  db.run(`\n    CREATE TABLE IF NOT EXISTS user_preferences (\n      user_id INT NOT NULL PRIMARY KEY,\n      theme VARCHAR(20) NOT NULL DEFAULT 'light',\n      accent_color VARCHAR(20) NOT NULL DEFAULT 'emerald',\n      layout VARCHAR(20) NOT NULL DEFAULT 'default',\n      notifications INT NOT NULL DEFAULT 1,\n      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n    );\n  `);
+
   return db;
 }
 
@@ -387,6 +397,92 @@ async function ensureUserProfileTable(pool) {
   }
 }
 
+/* Add admin_id column to users (MySQL, safe to re-run). */
+async function ensureAdminIdColumn(pool) {
+  try {
+    const [rows] = await pool.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'`
+    );
+    const have = new Set(
+      rows.map((r) => r.COLUMN_NAME || Object.values(r)[0]).map((v) => String(v).toLowerCase())
+    );
+    if (!have.has("admin_id")) {
+      await pool.query(`ALTER TABLE users ADD COLUMN admin_id VARCHAR(20) UNIQUE`);
+      console.log("[db] Migrated: added users.admin_id");
+    }
+    /* Backfill admin IDs for existing admins that lack one. */
+    await pool.query(
+      `UPDATE users SET admin_id = CONCAT('ADM', LPAD(id, 4, '0'))
+       WHERE role = 'Admin' AND (admin_id IS NULL OR admin_id = '')`
+    );
+  } catch (error) {
+    console.warn("admin_id migration skipped:", error.message);
+  }
+}
+
+/* Campus gallery table (MySQL, safe to re-run). */
+async function ensureCampusGalleryTable(pool) {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS campus_gallery (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(200) NOT NULL,
+        description TEXT NULL,
+        category VARCHAR(50) NOT NULL DEFAULT 'General',
+        image_url VARCHAR(2000) NULL,
+        image_data MEDIUMTEXT NULL,
+        display_order INT NOT NULL DEFAULT 0,
+        is_published TINYINT(1) NOT NULL DEFAULT 1,
+        is_cover TINYINT(1) NOT NULL DEFAULT 0,
+        created_by INT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_gallery_published (is_published, display_order)
+      )
+    `);
+    console.log("[db] Verified table: campus_gallery");
+  } catch (error) {
+    console.warn("campus_gallery table migration skipped:", error.message);
+  }
+}
+
+/* Application settings table (MySQL, safe to re-run). */
+async function ensureAppSettingsTable(pool) {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        setting_key VARCHAR(100) NOT NULL PRIMARY KEY,
+        setting_value TEXT NULL,
+        updated_by INT NULL,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    console.log("[db] Verified table: app_settings");
+  } catch (error) {
+    console.warn("app_settings table migration skipped:", error.message);
+  }
+}
+
+/* User preferences table (MySQL, safe to re-run). */
+async function ensureUserPreferencesTable(pool) {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS user_preferences (
+        user_id INT NOT NULL PRIMARY KEY,
+        theme VARCHAR(20) NOT NULL DEFAULT 'light',
+        accent_color VARCHAR(20) NOT NULL DEFAULT 'emerald',
+        layout VARCHAR(20) NOT NULL DEFAULT 'default',
+        notifications TINYINT(1) NOT NULL DEFAULT 1,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      )
+    `);
+    console.log("[db] Verified table: user_preferences");
+  } catch (error) {
+    console.warn("user_preferences table migration skipped:", error.message);
+  }
+}
+
 async function getPool() {
   if (mysqlPool) return mysqlPool;
 
@@ -405,6 +501,10 @@ async function getPool() {
     await mysqlPool.query("SELECT 1 AS connected");
     await ensurePremiumRoomColumns(mysqlPool);
     await ensureUserProfileTable(mysqlPool);
+    await ensureAdminIdColumn(mysqlPool);
+    await ensureCampusGalleryTable(mysqlPool);
+    await ensureAppSettingsTable(mysqlPool);
+    await ensureUserPreferencesTable(mysqlPool);
     return mysqlPool;
   } catch (error) {
     mysqlPool = null;
@@ -462,6 +562,9 @@ const db = {
 
     return querySqlite(sql, params);
   },
+  /* Expose the pool so auth can wrap linked inserts in a transaction (MySQL).
+     Returns null when MySQL is unavailable (SQLite fallback path). */
+  getPool,
 };
 
 module.exports = db;

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Bell, Search, UserCircle, Sun, Moon, Menu } from "lucide-react";
+import { Bell, Search, UserCircle, Sun, Moon, Menu, Building2 } from "lucide-react";
 import { api, getStoredUser } from "../lib/api";
 
 type Notice = { id: number; title: string; message: string; date: string };
@@ -47,7 +47,10 @@ function Navbar({ activePage, onSearch, onNavigate }: NavbarProps) {
 
   return (
     <header className="navbar">
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="navbar-logo" aria-hidden="true">
+          <Building2 size={20} />
+        </div>
         <button
           type="button"
           className="hamburger-btn"
@@ -62,6 +65,17 @@ function Navbar({ activePage, onSearch, onNavigate }: NavbarProps) {
         </div>
       </div>
       <div className="navbar-right">
+        <button
+          type="button"
+          className="st-btn"
+          aria-label="Open navigation"
+          title="Navigation"
+          onClick={() => document.body.classList.toggle("sidebar-open")}
+        >
+          <Menu size={18} />
+          <span>ST</span>
+        </button>
+
         <div className="search-box">
           <Search size={18} />
           <input

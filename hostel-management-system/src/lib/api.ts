@@ -14,7 +14,7 @@ type ApiOptions = {
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method || "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
@@ -47,7 +47,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
 export async function apiRaw<T>(path: string, options: ApiOptions = {}): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method || "GET",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
@@ -66,11 +66,23 @@ export async function apiRaw<T>(path: string, options: ApiOptions = {}): Promise
   return data;
 }
 
-export function getStoredUser(): { id: number; name: string; email: string; role: string } | null {
+export function getStoredUser(): { id: number; name: string; email: string; role: string; admin_id?: string | null } | null {
   try {
     const raw = localStorage.getItem("hostelUser");
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
+}
+
+/* Headers sent with every authenticated request so backend routes can
+   verify the caller's identity and role (stateless localStorage session). */
+export function authHeaders(): Record<string, string> {
+  const user = getStoredUser();
+  const headers: Record<string, string> = {};
+  if (user) {
+    headers["x-user-id"] = String(user.id);
+    headers["x-user-email"] = String(user.email || "");
+  }
+  return headers;
 }

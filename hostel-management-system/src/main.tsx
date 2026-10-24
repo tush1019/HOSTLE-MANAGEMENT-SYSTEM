@@ -12,6 +12,8 @@ import "./theme-admin.css";
 import "./theme-extreme.css";
 import "./home.css";
 import "./student.css";
+import "./mobile.css";
+import "./auth.css";
 import { ToastProvider } from "./components/Toast";
 
 /* Apply saved theme before first paint */

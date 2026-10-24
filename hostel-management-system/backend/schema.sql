@@ -277,6 +277,59 @@ CREATE TABLE IF NOT EXISTS room_issue_photos (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Administrator identity: unique, permanent Admin ID per admin user
+ALTER TABLE users ADD COLUMN admin_id VARCHAR(20) UNIQUE;
+
+-- Update existing admins that lack an admin ID
+UPDATE users SET admin_id = CONCAT('ADM', LPAD(id, 4, '0')) WHERE role = 'Admin' AND (admin_id IS NULL OR admin_id = '');
+
+-- Campus gallery (published campus photographs managed by admins)
+CREATE TABLE IF NOT EXISTS campus_gallery (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(200) NOT NULL,
+  description TEXT NULL,
+  category VARCHAR(50) NOT NULL DEFAULT 'General',
+  image_url VARCHAR(2000) NULL,
+  image_data MEDIUMTEXT NULL,
+  display_order INT NOT NULL DEFAULT 0,
+  is_published TINYINT(1) NOT NULL DEFAULT 1,
+  is_cover TINYINT(1) NOT NULL DEFAULT 0,
+  created_by INT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_gallery_published (is_published, display_order)
+);
+
+-- Persistent application settings (admin only)
+CREATE TABLE IF NOT EXISTS app_settings (
+  setting_key VARCHAR(100) NOT NULL PRIMARY KEY,
+  setting_value TEXT NULL,
+  updated_by INT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Per-user display preferences (theme, accent, layout, notifications)
+CREATE TABLE IF NOT EXISTS user_preferences (
+  user_id INT NOT NULL PRIMARY KEY,
+  theme VARCHAR(20) NOT NULL DEFAULT 'light',
+  accent_color VARCHAR(20) NOT NULL DEFAULT 'emerald',
+  layout VARCHAR(20) NOT NULL DEFAULT 'default',
+  notifications TINYINT(1) NOT NULL DEFAULT 1,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Seed default application settings (only when empty)
+INSERT INTO app_settings (setting_key, setting_value)
+SELECT * FROM (SELECT 'app_name', 'HostelHub' UNION ALL
+               SELECT 'app_tagline', 'Hostel Management System' UNION ALL
+               SELECT 'hostel_name', 'HostelHub Hostel' UNION ALL
+               SELECT 'hostel_contact', '' UNION ALL
+               SELECT 'hostel_address', '' UNION ALL
+               SELECT 'accent_color', 'emerald' UNION ALL
+               SELECT 'theme', 'light' UNION ALL
+               SELECT 'hostel_rules', '' ) AS seed
+WHERE NOT EXISTS (SELECT 1 FROM app_settings WHERE setting_key = seed.setting_key);
+
 -- Seed hostel services (only when empty)
 INSERT INTO hostel_services (category, title, details, contact_name, contact_phone, status)
 SELECT * FROM (

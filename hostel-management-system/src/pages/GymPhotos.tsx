@@ -3,6 +3,7 @@ import { Dumbbell, Search, Plus } from "lucide-react";
 import { api } from "../lib/api";
 import { useToast } from "../components/Toast";
 import Modal from "../components/Modal";
+import { compressImage } from "../lib/images";
 
 type GymPhoto = {
   id: number; title: string; photo: string | null; description: string | null;
@@ -16,7 +17,7 @@ function GymPhotos() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ title: "", photo: "", description: "", equipmentType: "", status: "Active" as string });
-  const [saving] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [q, setQ] = useState("");
   const [preview, setPreview] = useState("");
 
@@ -26,10 +27,9 @@ function GymPhotos() {
     try {
       const data = await api<GymPhoto[]>("/gym/photos");
       setRows(data || []);
-    } catch {
-      // Endpoint may not exist yet — show seeded/demo data gracefully
+    } catch (e) {
       setRows([]);
-      setErr("Gym photo gallery is being set up by the admin.");
+      setErr(e instanceof Error ? e.message : "Gym photo gallery is being set up by the admin.");
     } finally {
       setLoading(false);
     }
@@ -37,23 +37,34 @@ function GymPhotos() {
 
   useEffect(() => { load(); }, []);
 
-  const readFileAsDataURL = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
   const handlePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) { notify("Please select an image file", "error"); return; }
     try {
-      const dataUrl = await readFileAsDataURL(file);
+      const dataUrl = await compressImage(file);
       setForm({ ...form, photo: dataUrl });
       setPreview(dataUrl);
-    } catch { notify("Failed to read image", "error"); }
+    } catch (err) {
+      notify(err instanceof Error ? err.message : "Failed to read image", "error");
+    }
+  };
+
+  const save = async () => {
+    if (!form.title.trim()) { notify("Title is required", "error"); return; }
+    if (!form.photo) { notify("Photo is required", "error"); return; }
+    setSaving(true);
+    try {
+      await api("/gym/photos", { method: "POST", body: form });
+      notify("Gym photo added");
+      setShowModal(false);
+      setForm({ title: "", photo: "", description: "", equipmentType: "", status: "Active" });
+      setPreview("");
+      load();
+    } catch (e) {
+      notify(e instanceof Error ? e.message : "Save failed", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const combined = q.toLowerCase().trim();
@@ -116,7 +127,7 @@ function GymPhotos() {
             <div className="hub-field"><label>Status</label><select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}><option>Active</option><option>Maintenance</option></select></div>
             <div className="hub-form-actions">
               <button type="button" className="btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
-              <button type="button" className="primary-btn" onClick={() => { notify("Gym photo endpoint coming soon"); setShowModal(false); }} disabled={saving}>{saving ? "Saving..." : "Add Photo"}</button>
+              <button type="button" className="primary-btn" onClick={save} disabled={saving}>{saving ? "Saving..." : "Add Photo"}</button>
             </div>
           </div>
         </Modal>

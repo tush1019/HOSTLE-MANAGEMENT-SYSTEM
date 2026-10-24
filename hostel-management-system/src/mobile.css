@@ -1,0 +1,204 @@
+/* ============================================================
+   HOSTELHUB — MOBILE RESPONSIVE SAFEGUARDS
+   Loaded last so these rules win over the theme layers.
+   Targets root causes of mobile overflow / nav issues without
+   rewriting desktop styles.
+   ============================================================ */
+
+/* --- Base: no horizontal scroll, respect viewports --- */
+html {
+  overflow-x: clip;
+}
+body {
+  overflow-x: hidden;
+  min-width: 0;
+  position: relative;
+}
+
+/* Prevent iOS Safari zoom on focus (keeps 16px readable text) */
+input,
+select,
+textarea {
+  font-size: 16px;
+}
+
+/* --- Touch-friendly tap targets --- */
+button,
+[role="button"],
+.st-btn,
+.hamburger-btn,
+.sidebar-menu,
+.logout-btn,
+.action-btn {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* --- Forms fit the available width --- */
+input,
+select,
+textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- Images scale proportionally --- */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* --- Layout containers must not overflow horizontally --- */
+.app,
+.main-content,
+.content,
+.page-heading {
+  overflow-x: hidden;
+}
+
+/* --- Tables: controlled horizontal scroll on narrow screens --- */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 calc(-1 * var(--table-gutter, 1rem));
+}
+@media (max-width: 600px) {
+  .table-wrapper table {
+    min-width: 100%;
+    font-size: 14px;
+  }
+  .table-wrapper th,
+  .table-wrapper td {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+}
+
+/* --- Modals fit small screens and scroll internally --- */
+.modal-overlay {
+  padding: 24px 12px;
+  overflow-y: auto;
+}
+.modal-card {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 12px;
+}
+@media (max-width: 480px) {
+  .modal-card {
+    margin: 0 8px;
+  }
+}
+
+/* --- Navigation drawer: fix z-index so items are tappable ---
+   The sidebar was painted *under* the close overlay, which made
+   every drawer tap close the menu instead of navigating.          */
+.sidebar {
+  z-index: 8100 !important;
+}
+.sidebar-overlay {
+  z-index: 8000 !important;
+}
+
+/* --- Mobile drawer sizing --- */
+@media (max-width: 900px) {
+  .sidebar {
+    width: min(280px, 92vw) !important;
+    height: 100dvh !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+  body.sidebar-open {
+    overflow: hidden;
+  }
+  .sidebar-close {
+    display: block !important;
+  }
+  .st-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 14px;
+  }
+  .hamburger-btn {
+    display: inline-flex !important;
+  }
+  .navbar-logo {
+    display: flex;
+  }
+}
+
+/* --- Desktop: hide mobile-only controls --- */
+@media (min-width: 901px) {
+  .st-btn {
+    display: none !important;
+  }
+  .hamburger-btn {
+    display: none !important;
+  }
+  .sidebar-close {
+    display: none !important;
+  }
+  .navbar-logo {
+    display: none !important;
+  }
+}
+
+/* --- Mobile safe areas --- */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* --- Responsive typography (clamped, never clipped) --- */
+h1 { font-size: clamp(1.25rem, 5vw, 1.75rem); }
+h2 { font-size: clamp(1.1rem, 4.5vw, 1.5rem); }
+h3 { font-size: clamp(1rem, 4vw, 1.25rem); }
+.navbar h1 { font-size: clamp(15px, 4vw, 18px); }
+
+/* --- Keep fixed-position chrome from covering content --- */
+.toast-stack {
+  bottom: max(24px, env(safe-area-inset-bottom));
+  left: 12px;
+  right: 12px;
+  max-width: none;
+}
+
+/* Fixed-width search wrappers must not overflow narrow screens */
+@media (max-width: 600px) {
+  .student-search,
+  .room-search,
+  .fee-search,
+  .complaint-search,
+  .mess-search {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .page-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .page-heading h1,
+  .page-heading h2 {
+    font-size: clamp(18px, 5vw, 22px) !important;
+    margin: 0;
+  }
+  .stats-grid,
+  .admin-stats,
+  .qa-strip,
+  .sp-grid,
+  .sp-facts,
+  .dashboard-grid,
+  .settings-grid,
+  .reports-grid,
+  .hub-form-grid,
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

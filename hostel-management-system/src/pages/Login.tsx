@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { API_BASE_URL } from "../lib/api";
 import { ADMIN_PASSKEY } from "../lib/constants";
+import heroImage from "../assets/hero.png";
 
 type LoginProps = {
   onLogin: (role: "Admin" | "Student") => void;
@@ -143,6 +144,10 @@ function Login({ onLogin, onSignup, onHome }: LoginProps) {
 
           <div className="login-logo">
             <Building2 size={30} />
+          </div>
+
+          <div className="login-brand-image" aria-hidden="true">
+            <img src={heroImage} alt="Hostel campus" loading="lazy" decoding="async" />
           </div>
 
           <div>

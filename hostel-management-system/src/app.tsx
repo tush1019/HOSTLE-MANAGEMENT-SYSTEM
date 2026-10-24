@@ -1,7 +1,9 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { api, getStoredUser } from "./lib/api";
 
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
+import MobileNav from "./components/MobileNav";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -30,39 +32,103 @@ import MessPhotos from "./pages/MessPhotos";
 import GymPhotos from "./pages/GymPhotos";
 import RoomIssuePhotos from "./pages/RoomIssuePhotos";
 import StudentProfile from "./pages/StudentProfile";
+import CampusGallery from "./pages/CampusGallery";
 
 type Role = "Admin" | "Student" | null;
 type PublicPage = "Home" | "Login" | "Signup";
 
+const ADMIN_ONLY_ROUTES = new Set([
+  "Students", "Rooms", "Fees", "Reports", "Settings", "Campus Gallery",
+  "Leave Management", "Maintenance Request", "Mess", "Housekeeping",
+  "Water & Electricity", "Notices", "Medical Facilities", "Study Room",
+]);
+const STUDENT_ROUTES = new Set([
+  "Dashboard", "Profile", "Rooms", "Water & Electricity", "Housekeeping",
+  "Mess", "Complaints", "Leave Management", "Maintenance Request",
+  "Study Room", "Gym Photos", "Facilities", "Entry & Exit Rules",
+  "Medical Facilities", "WiFi Information", "Notices", "Laundry Services",
+  "Mess Photos", "Room Issue Photos", "Settings",
+]);
+function isAdminRoute(page: string) { return ADMIN_ONLY_ROUTES.has(page); }
+function isStudentRoute(page: string) { return STUDENT_ROUTES.has(page); }
+
 function App() {
   const storedRole = localStorage.getItem("hostelRole");
+  const storedUser = getStoredUser();
 
   const [role, setRole] = useState<Role>(
     storedRole === "Admin" || storedRole === "Student" ? storedRole : null
+  );
+  const [user, setUser] = useState<ReturnType<typeof getStoredUser> | null>(
+    storedUser || null
   );
 
   const [publicPage, setPublicPage] = useState<PublicPage>("Home");
   const [activePage, setActivePage] = useState("Dashboard");
   const [globalSearch, setGlobalSearch] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("hostelRole");
+    setRole(stored === "Admin" || stored === "Student" ? stored : null);
+    setUser(getStoredUser());
+    setInitialized(true);
+  }, []);
+
+  useEffect(() => {
+    const handleStorage = () => {
+      const stored = localStorage.getItem("hostelRole");
+      setRole(stored === "Admin" || stored === "Student" ? stored : null);
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  useEffect(() => {
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && drawerOpen) {
+        setDrawerOpen(false);
+        document.body.classList.remove("sidebar-open");
+      }
+    };
+    document.addEventListener("keydown", handleKeydown);
+    return () => document.removeEventListener("keydown", handleKeydown);
+  }, [drawerOpen]);
 
   const handleSearch = useCallback((q: string) => setGlobalSearch(q), []);
 
-  const goPage = useCallback((page: string) => {
-    setGlobalSearch("");
-    setActivePage(page);
-  }, []);
+  const goPage = useCallback(
+    (page: string) => {
+      if (role !== "Admin" && isAdminRoute(page) && !isStudentRoute(page)) {
+        return;
+      }
+      setGlobalSearch("");
+      setActivePage(page);
+      setDrawerOpen(false);
+      document.body.classList.remove("sidebar-open");
+    },
+    [role]
+  );
 
   const handleLogin = (loginRole: "Admin" | "Student") => {
     localStorage.setItem("hostelRole", loginRole);
+    localStorage.setItem("hostelUser", JSON.stringify(getStoredUser()));
     setRole(loginRole);
+    setUser(getStoredUser());
     setActivePage("Dashboard");
+    setPublicPage("Home");
   };
 
   const handleLogout = () => {
     localStorage.removeItem("hostelRole");
+    localStorage.removeItem("hostelUser");
     setRole(null);
+    setUser(null);
     setActivePage("Dashboard");
     setPublicPage("Home");
+    setDrawerOpen(false);
+    document.body.classList.remove("sidebar-open");
   };
 
   if (!role && publicPage === "Home") {
@@ -95,7 +161,19 @@ function App() {
         type="button"
         className="sidebar-overlay"
         aria-label="Close menu"
-        onClick={() => document.body.classList.remove("sidebar-open")}
+        onClick={() => {
+          document.body.classList.remove("sidebar-open");
+          setDrawerOpen(false);
+        }}
+      />
+      <MobileNav
+        role={role}
+        activePage={activePage}
+        setActivePage={goPage}
+        onLogout={handleLogout}
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+  onOpen={() => setDrawerOpen(true)}
       />
       <Sidebar
         activePage={activePage}

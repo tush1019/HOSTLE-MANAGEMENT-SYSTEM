@@ -3,6 +3,7 @@ import { Image as ImageIcon, Search, Plus, Wrench } from "lucide-react";
 import { api } from "../lib/api";
 import { useToast } from "../components/Toast";
 import Modal from "../components/Modal";
+import { compressImage } from "../lib/images";
 
 type RoomIssue = {
   id: number; roomNumber: string | null; title: string; photo: string | null;
@@ -16,7 +17,7 @@ function RoomIssuePhotos() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ roomNumber: "", title: "", photo: "", description: "" });
-  const [saving] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [q, setQ] = useState("");
   const [preview, setPreview] = useState("");
 
@@ -36,23 +37,35 @@ function RoomIssuePhotos() {
 
   useEffect(() => { load(); }, []);
 
-  const readFileAsDataURL = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
   const handlePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) { notify("Please select an image file", "error"); return; }
     try {
-      const dataUrl = await readFileAsDataURL(file);
+      const dataUrl = await compressImage(file);
       setForm({ ...form, photo: dataUrl });
       setPreview(dataUrl);
-    } catch { notify("Failed to read image", "error"); }
+    } catch (err) {
+      notify(err instanceof Error ? err.message : "Failed to read image", "error");
+    }
+  };
+
+  const save = async () => {
+    if (!form.roomNumber.trim()) { notify("Room number is required", "error"); return; }
+    if (!form.title.trim()) { notify("Issue title is required", "error"); return; }
+    if (!form.photo) { notify("Photo is required", "error"); return; }
+    setSaving(true);
+    try {
+      await api("/room-issues", { method: "POST", body: form });
+      notify("Room issue reported");
+      setShowModal(false);
+      setForm({ roomNumber: "", title: "", photo: "", description: "" });
+      setPreview("");
+      load();
+    } catch (e) {
+      notify(e instanceof Error ? e.message : "Save failed", "error");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const combined = q.toLowerCase().trim();
@@ -114,7 +127,7 @@ function RoomIssuePhotos() {
             <div className="hub-field"><label>Description</label><textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What is broken or damaged..." /></div>
             <div className="hub-form-actions">
               <button type="button" className="btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
-              <button type="button" className="primary-btn" onClick={() => { notify("Room issue endpoint coming soon"); setShowModal(false); }} disabled={saving}>{saving ? "Saving..." : "Report Issue"}</button>
+              <button type="button" className="primary-btn" onClick={save} disabled={saving}>{saving ? "Saving..." : "Report Issue"}</button>
             </div>
           </div>
         </Modal>

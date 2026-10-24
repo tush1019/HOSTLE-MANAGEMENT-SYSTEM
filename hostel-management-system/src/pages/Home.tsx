@@ -1,4 +1,4 @@
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useState } from "react";
 import {
   Building2,
   LogIn,
@@ -36,15 +36,6 @@ type LiveStats = {
 const HERO_IMAGE =
   "https://images.unsplash.com/photo-1523247669263-86d820b6937f?auto=format&fit=crop&w=1920&q=80";
 
-const FACILITY_IMAGES: Record<string, string> = {
-  rooms: "https://images.unsplash.com/photo-1502672260266-1c1ef1d77368?auto=format&fit=crop&w=800&q=80",
-  mess: "https://images.unsplash.com/photo-1556228578-0d85b8f80906?auto=format&fit=crop&w=800&q=80",
-  study: "https://images.unsplash.com/photo-1524995799762-66c461e8f90e?auto=format&fit=crop&w=800&q=80",
-  gym: "https://images.unsplash.com/photo-1534438327275-144869529a6b?auto=format&fit=crop&w=800&q=80",
-  medical: "https://images.unsplash.com/photo-1551089806-d69f491f3454?auto=format&fit=crop&w=800&q=80",
-  housekeeping: "https://images.unsplash.com/photo-1581539228545-8b79337da900?auto=format&fit=crop&w=800&q=80",
-};
-
 function ImageWithFallback({ src, alt, className, fallbackColor, children }: { src: string; alt: string; className?: string; fallbackColor?: string; children?: JSX.Element }) {
   const [error, setError] = useState(false);
   return (
@@ -69,9 +60,12 @@ function ImageWithFallback({ src, alt, className, fallbackColor, children }: { s
 function Home({ onLogin, onSignup }: HomeProps) {
   const [live, setLive] = useState<LiveStats | null>(null);
   const [scrolled, setScrolled] = useState(false);
+  const [galleryItems, setGalleryItems] = useState<ImageItem[]>([]);
+  const [galleryLoading, setGalleryLoading] = useState(true);
+  const [galleryError, setGalleryError] = useState<string | null>(null);
 
   useEffect(() => {
-    api<LiveStats>("/dashboard").then(setLive).catch(() => {});
+    api<ImageItem[]>("/api/campus-gallery/public").then(setGalleryItems).catch((err) => setGalleryError(err.message || "Failed to load gallery")).finally(() => setGalleryLoading(false));
   }, []);
 
   useEffect(() => {
@@ -83,6 +77,8 @@ function Home({ onLogin, onSignup }: HomeProps) {
   const resolution = live && live.complaints.total > 0
     ? Math.round((live.complaints.resolved / live.complaints.total) * 100)
     : 0;
+
+  const imageUrl = (item: ImageItem) => item.image_url || "/placeholder.svg";
 
   return (
     <div className="public-home premium-home">
@@ -481,12 +477,12 @@ function Home({ onLogin, onSignup }: HomeProps) {
 
 /* ================= SUB-COMPONENTS ================= */
 
-function FeatureCard({ icon, title, description, imageKey }: { icon: JSX.Element; title: string; description: string; imageKey: string }) {
+function FeatureCard({ icon, title, description }: { icon: any; title: string; description: string }) {
   return (
     <div className="feature-card premium">
       <div className="feature-image">
         <ImageWithFallback
-          src={FACILITY_IMAGES[imageKey]}
+          src="https://images.unsplash.com/photo-1502672260266-1c1ef1d77368?auto=format&fit=crop&w=800&q=80"
           alt={title}
           fallbackColor="var(--primary-soft)"
         >
@@ -501,21 +497,21 @@ function FeatureCard({ icon, title, description, imageKey }: { icon: JSX.Element
   );
 }
 
-function GalleryItem({ title, subtitle, imageKey, icon }: { title: string; subtitle: string; imageKey: string; icon: JSX.Element }) {
+function GalleryItem({ item }: { item: ImageItem }) {
   return (
     <div className="gallery-item premium">
       <div className="gallery-image">
         <ImageWithFallback
-          src={FACILITY_IMAGES[imageKey]}
-          alt={title}
+          src={item.image_url || "/placeholder.svg"}
+          alt={item.title}
           fallbackColor="var(--surface-3)"
         >
-          {icon}
+          {item.is_cover && <Star2 size={20} />}
         </ImageWithFallback>
         <div className="gallery-overlay">
           <div className="gallery-info">
-            <strong>{title}</strong>
-            <span>{subtitle}</span>
+            <strong>{item.title}</strong>
+            <span>{item.description || ""}</span>
           </div>
           <ArrowRight size={16} className="gallery-arrow" />
         </div>
