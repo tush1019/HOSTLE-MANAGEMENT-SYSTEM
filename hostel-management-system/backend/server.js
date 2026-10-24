@@ -132,15 +132,21 @@ app.use("/api", (req, res) => {
   res.status(404).json({ success: false, message: "API route not found" });
 });
 
-/* Serve the built frontend — one service hosts the whole app */
 const path = require("path");
+const fs = require("fs");
 const FRONTEND_DIST = path.join(__dirname, "..", "dist");
 app.use(express.static(FRONTEND_DIST));
 
 /* SPA fallback: any other GET returns the frontend index.html */
 app.use((req, res, next) => {
   if (req.method === "GET" && !req.path.startsWith("/api")) {
-    return res.sendFile(path.join(FRONTEND_DIST, "index.html"));
+    const indexFile = path.join(FRONTEND_DIST, "index.html");
+    if (fs.existsSync(indexFile)) {
+      return res.sendFile(indexFile);
+    }
+    return res.status(503).send(
+      "Frontend build not found. Set Render Build Command to: npm install && npm run build && cd backend && npm install"
+    );
   }
   next();
 });
