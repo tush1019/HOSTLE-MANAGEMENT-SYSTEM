@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { api, getStoredUser } from "./lib/api";
+import { getStoredUser } from "./lib/api";
 
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
@@ -32,7 +32,6 @@ import MessPhotos from "./pages/MessPhotos";
 import GymPhotos from "./pages/GymPhotos";
 import RoomIssuePhotos from "./pages/RoomIssuePhotos";
 import StudentProfile from "./pages/StudentProfile";
-import CampusGallery from "./pages/CampusGallery";
 
 type Role = "Admin" | "Student" | null;
 type PublicPage = "Home" | "Login" | "Signup";
@@ -54,26 +53,19 @@ function isStudentRoute(page: string): boolean { return STUDENT_ROUTES.has(page)
 
 function App() {
   const storedRole = localStorage.getItem("hostelRole");
-  const storedUser = getStoredUser();
 
   const [role, setRole] = useState<Role>(
     storedRole === "Admin" || storedRole === "Student" ? storedRole : null
-  );
-  const [user, setUser] = useState<ReturnType<typeof getStoredUser> | null>(
-    storedUser || null
   );
 
   const [publicPage, setPublicPage] = useState<PublicPage>("Home");
   const [activePage, setActivePage] = useState("Dashboard");
   const [globalSearch, setGlobalSearch] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("hostelRole");
     setRole(stored === "Admin" || stored === "Student" ? stored : null);
-    setUser(getStoredUser());
-    setInitialized(true);
   }, []);
 
   useEffect(() => {
@@ -115,7 +107,6 @@ function App() {
     localStorage.setItem("hostelRole", loginRole);
     localStorage.setItem("hostelUser", JSON.stringify(getStoredUser()));
     setRole(loginRole);
-    setUser(getStoredUser());
     setActivePage("Dashboard");
     setPublicPage("Home");
   };
@@ -124,7 +115,6 @@ function App() {
     localStorage.removeItem("hostelRole");
     localStorage.removeItem("hostelUser");
     setRole(null);
-    setUser(null);
     setActivePage("Dashboard");
     setPublicPage("Home");
     setDrawerOpen(false);

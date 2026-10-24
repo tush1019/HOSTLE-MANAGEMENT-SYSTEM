@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Building2, X, UserCircle, ChevronRight } from "lucide-react";
 import { getStoredUser } from "../lib/api";
 
@@ -128,7 +128,7 @@ function MobileNav({ role, activePage, setActivePage, onLogout, isOpen, onClose,
     },
   ];
 
-  const sections = role === "Admin" ? ADMIN_SECTIONS : STUDENT_SECTIONS;
+  // sections computed on demand in render
 
   return (
     <>

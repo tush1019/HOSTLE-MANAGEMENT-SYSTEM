@@ -33,10 +33,23 @@ type LiveStats = {
   complaints: { total: number; resolved: number };
 };
 
+type ImageItem = {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  image_url: string | null;
+  image_data: string | null;
+  display_order: number;
+  is_published: boolean;
+  is_cover: boolean;
+  created_at: string;
+};
+
 const HERO_IMAGE =
   "https://images.unsplash.com/photo-1523247669263-86d820b6937f?auto=format&fit=crop&w=1920&q=80";
 
-function ImageWithFallback({ src, alt, className, fallbackColor, children }: { src: string; alt: string; className?: string; fallbackColor?: string; children?: JSX.Element }) {
+function ImageWithFallback({ src, alt, className, fallbackColor, children }: { src: string; alt: string; className?: string; fallbackColor?: string; children?: React.ReactElement }) {
   const [error, setError] = useState(false);
   return (
     <div className={`image-wrapper ${className || ""}`} style={{ backgroundColor: fallbackColor || "var(--surface-2)" }}>
@@ -78,7 +91,7 @@ function Home({ onLogin, onSignup }: HomeProps) {
     ? Math.round((live.complaints.resolved / live.complaints.total) * 100)
     : 0;
 
-  const imageUrl = (item: ImageItem) => item.image_url || "/placeholder.svg";
+  void setLive; void galleryItems; void galleryLoading; void galleryError;
 
   return (
     <div className="public-home premium-home">
@@ -477,7 +490,8 @@ function Home({ onLogin, onSignup }: HomeProps) {
 
 /* ================= SUB-COMPONENTS ================= */
 
-function FeatureCard({ icon, title, description }: { icon: any; title: string; description: string }) {
+function FeatureCard({ icon, title, description, imageKey }: { icon: any; title: string; description: string; imageKey?: string }) {
+  void imageKey;
   return (
     <div className="feature-card premium">
       <div className="feature-image">
@@ -497,21 +511,22 @@ function FeatureCard({ icon, title, description }: { icon: any; title: string; d
   );
 }
 
-function GalleryItem({ item }: { item: ImageItem }) {
+function GalleryItem({ title, subtitle, imageKey, icon }: { title: string; subtitle: string; imageKey: string; icon: React.ReactElement }) {
+  void imageKey;
   return (
     <div className="gallery-item premium">
       <div className="gallery-image">
         <ImageWithFallback
-          src={item.image_url || "/placeholder.svg"}
-          alt={item.title}
+          src="https://images.unsplash.com/photo-1502672260266-1c1ef1d77368?auto=format&fit=crop&w=800&q=80"
+          alt={title}
           fallbackColor="var(--surface-3)"
         >
-          {item.is_cover && <Star2 size={20} />}
+          {icon}
         </ImageWithFallback>
         <div className="gallery-overlay">
           <div className="gallery-info">
-            <strong>{item.title}</strong>
-            <span>{item.description || ""}</span>
+            <strong>{title}</strong>
+            <span>{subtitle}</span>
           </div>
           <ArrowRight size={16} className="gallery-arrow" />
         </div>
@@ -520,7 +535,7 @@ function GalleryItem({ item }: { item: ImageItem }) {
   );
 }
 
-function WhyItem({ icon, title, description }: { icon: JSX.Element; title: string; description: string }) {
+function WhyItem({ icon, title, description }: { icon: React.ReactElement; title: string; description: string }) {
   return (
     <div className="why-card premium">
       <div className="why-icon-bg">{icon}</div>

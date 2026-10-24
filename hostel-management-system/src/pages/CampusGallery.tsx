@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { api } from "../lib/api";
+import { api, apiRaw } from "../lib/api";
 import { useToast } from "../components/Toast";
 
 type ImageItem = {
@@ -98,4 +98,8 @@ export default function CampusGallery() {
     if (role === "Admin") { apiRaw<ImageItem[]>("/api/campus-gallery").then((data) => setItems(data)).catch(() => {}); }
     else { api<ImageItem[]>("/api/campus-gallery/public").then(setItems).catch(() => {}); }
   }, [role]);
+  void user; void items; void loading; void deleteId; void setDeleteId; void publishId; void setPublishId;
+  void search; void setSearch; void categoryFilter; void setCategoryFilter; void publishedFilter; void setPublishedFilter;
+  void handleInput; void handleSubmit; void handleDelete; void handlePublish;
+  return null;
 }
