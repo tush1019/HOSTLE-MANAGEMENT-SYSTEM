@@ -49,8 +49,8 @@ const STUDENT_ROUTES = new Set([
   "Medical Facilities", "WiFi Information", "Notices", "Laundry Services",
   "Mess Photos", "Room Issue Photos", "Settings",
 ]);
-function isAdminRoute(page: string) { return ADMIN_ONLY_ROUTES.has(page); }
-function isStudentRoute(page: string) { return STUDENT_ROUTES.has(page); }
+function isAdminRoute(page: string): boolean { return ADMIN_ONLY_ROUTES.has(page); }
+function isStudentRoute(page: string): boolean { return STUDENT_ROUTES.has(page); }
 
 function App() {
   const storedRole = localStorage.getItem("hostelRole");

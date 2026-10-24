@@ -10,7 +10,6 @@ import {
   EyeOff,
 } from "lucide-react";
 import { API_BASE_URL } from "../lib/api";
-import { ADMIN_PASSKEY } from "../lib/constants";
 import heroImage from "../assets/hero.png";
 
 type LoginProps = {
@@ -47,10 +46,6 @@ function Login({ onLogin, onSignup, onHome }: LoginProps) {
     if (role === "Admin") {
       if (!passkey.trim()) {
         setPasskeyError("Enter the admin passkey to continue.");
-        return false;
-      }
-      if (passkey.trim() !== ADMIN_PASSKEY) {
-        setPasskeyError("Incorrect admin passkey. Please try again.");
         return false;
       }
     }

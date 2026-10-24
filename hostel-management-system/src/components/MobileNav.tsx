@@ -22,7 +22,7 @@ type MobileNavProps = {
   onOpen: () => void;
 };
 
-function MobileNav({ role, activePage, setActivePage, onLogout, isOpen, onClose }: MobileNavProps) {
+function MobileNav({ role, activePage, setActivePage, onLogout, isOpen, onClose, onOpen }: MobileNavProps) {
   const user = getStoredUser();
 
   /* Sync drawer state from parent prop - no local state needed */
@@ -189,7 +189,7 @@ function MobileNav({ role, activePage, setActivePage, onLogout, isOpen, onClose 
             )}
 
             <div className="mobile-nav-sections">
-              {sections.map((section, si) => (
+              {(role === "Admin" ? ADMIN_SECTIONS : STUDENT_SECTIONS).map((section, si) => (
                 <div key={si} className="mobile-nav-section-group">
                   <h3 className="mobile-nav-section-label">{section.label}</h3>
                   <ul className="mobile-nav-section-list">

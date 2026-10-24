@@ -50,8 +50,8 @@ export default function CampusGallery() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [publishedFilter, setPublishedFilter] = useState("");
 
-  useEffect(() => { api<ImageItem[]>("/api/campus-gallery/public").then(setItems).catch(() => setItems([])); }, [search, categoryFilter, publishedFilter]);
-  useEffect(() => { if (role !== "Admin") return; apiRaw<ImageItem[]>("/api/campus-gallery").then((data) => setItems(data)).catch(() => setItems([])); setLoading(false); }, [role]);
+  useEffect(() => { api<ImageItem[]>("/api/campus-gallery/public").then((data) => setItems(data ?? [])).catch(() => setItems([])); }, [search, categoryFilter, publishedFilter]);
+  useEffect(() => { if (role !== "Admin") return; apiRaw<ImageItem[]>("/api/campus-gallery").then((data) => setItems(data ?? [])).catch(() => setItems([])); setLoading(false); }, [role]);
 
   const handleInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target; setForm({ ...form, [name]: value ? value.trim() : "" });
@@ -80,8 +80,8 @@ export default function CampusGallery() {
       } catch (err: any) { notify(err.message || "Failed to create", "error"); }
     }
     setForm({ title: "", description: "", category: "Hostel Building", display_order: 0, is_published: true, image_url: null, image_base64: null });
-    if (role === "Admin") { apiRaw<ImageItem[]>("/api/campus-gallery").then((data) => setItems(data)).catch(() => {}); }
-    else { api<ImageItem[]>("/api/campus-gallery/public").then(setItems).catch(() => {}); }
+    if (role === "Admin") { apiRaw<ImageItem[]>("/api/campus-gallery").then((data) => setItems(data ?? [])).catch(() => {}); }
+    else { api<ImageItem[]>("/api/campus-gallery/public").then((data) => setItems(data ?? [])).catch(() => {}); }
   }, [editing, form, role]);
 
   const handleDelete = useCallback(async (id: number) => {

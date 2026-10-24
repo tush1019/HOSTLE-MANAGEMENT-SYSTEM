@@ -65,7 +65,7 @@ function Home({ onLogin, onSignup }: HomeProps) {
   const [galleryError, setGalleryError] = useState<string | null>(null);
 
   useEffect(() => {
-    api<ImageItem[]>("/api/campus-gallery/public").then(setGalleryItems).catch((err) => setGalleryError(err.message || "Failed to load gallery")).finally(() => setGalleryLoading(false));
+    api<ImageItem[]>("/api/campus-gallery/public").then((data) => setGalleryItems(data ?? [])).catch((err) => setGalleryError(err.message || "Failed to load gallery")).finally(() => setGalleryLoading(false));
   }, []);
 
   useEffect(() => {

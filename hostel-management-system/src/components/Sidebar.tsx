@@ -94,7 +94,7 @@ function Sidebar({ activePage, setActivePage, onLogout, role }: SidebarProps) {
     onLogout();
   };
 
-  const go = (page: string) => {
+  const go = (page: string, item: DrawerItem) => {
     /* Role-based route guard: block students from admin-only routes. */
     if (role !== "Admin" && item.roles.includes("Admin")) {
       return;
@@ -137,7 +137,7 @@ function Sidebar({ activePage, setActivePage, onLogout, role }: SidebarProps) {
                 key={item.route}
                 type="button"
                 className={`sidebar-menu ${activePage === item.route ? "active" : ""}`}
-                onClick={() => go(item.route)}
+                onClick={() => go(item.route, item)}
               >
                 <Icon size={18} />
                 <span>{item.label}</span>

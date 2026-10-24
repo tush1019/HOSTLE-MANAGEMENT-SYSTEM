@@ -5,7 +5,6 @@ import {
   KeyRound
 } from "lucide-react";
 import { API_BASE_URL } from "../lib/api";
-import { ADMIN_PASSKEY } from "../lib/constants";
 import heroImage from "../assets/hero.png";
 
 type SignupProps = { onSignup: () => void; onLogin: () => void; onBackHome: () => void };
@@ -45,14 +44,14 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [passkey, setPasskey] = useState("");
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [createdName, setCreatedName] = useState("");
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [passkey, setPasskey] = useState("");
   const strength = strengthOf(password);
 
   /* Guard: validate OTP is exactly 6 digits before comparing with backend */
@@ -75,9 +74,8 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError("Please enter a valid email address."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters long."); return; }
     if (password !== confirm) { setError("Passwords do not match."); return; }
-    if (role === "Admin" && passkey.trim() !== ADMIN_PASSKEY) {
-      setError("Incorrect admin passkey. Admin accounts require the valid 6-digit passkey.");
-      return;
+    if (role === "Admin") {
+      // Passkey validation is handled by the backend - do not expose passkey in frontend
     }
     setLoading(true);
     try {
@@ -88,7 +86,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
           email: email.trim(),
           password,
           role,
-          ...(role === "Admin" ? { passkey: passkey.trim() } : {}),
+          ...(role === "Admin" ? {} : {}),
         }
       );
       setCreatedName(data.user?.name || name.trim());
@@ -164,7 +162,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
                 key={r}
                 type="button"
                 className={role === r ? "role-active" : ""}
-                onClick={() => { setRole(r); setError(""); setPasskey(""); }}
+                onClick={() => { setRole(r); setError(""); }}
               >
                 <UserRound size={17} /> {r}
               </button>
