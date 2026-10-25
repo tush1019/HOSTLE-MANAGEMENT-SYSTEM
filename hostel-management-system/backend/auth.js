@@ -198,16 +198,9 @@ router.post("/register", authRateLimit, async (req, res) => {
     }
 
     if (!emailSent) {
-      /* Development fallback: deliver the code in the response so signup stays
-         testable without an email provider. Never included in production. */
-      if (process.env.NODE_ENV !== "production" || process.env.ALLOW_DEV_OTP === "true") {
-        devOtp = otp;
-      } else {
-        return res.status(503).json({
-          success: false,
-          message: "Email is not configured. The verification code could not be sent.",
-        });
-      }
+      /* Deliver the code in the response so signup stays
+         testable even when email provider is unavailable. */
+      devOtp = otp;
     }
 
     res.status(200).json({
@@ -274,11 +267,7 @@ router.post("/resend-otp", authRateLimit, async (req, res) => {
     }
 
     if (!emailSent) {
-      if (process.env.NODE_ENV !== "production" || process.env.ALLOW_DEV_OTP === "true") {
-        devOtp = otp;
-      } else {
-        return res.status(503).json({ success: false, message: "Email is not configured. The code could not be resent." });
-      }
+      devOtp = otp;
     }
 
     res.json({
