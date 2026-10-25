@@ -1,0 +1,254 @@
+erDiagram
+    USERS {
+        int id PK
+        varchar name
+        varchar email UK
+        varchar password
+        enum role
+        tinyint email_verified
+        varchar admin_id UK
+        timestamp created_at
+    }
+
+    USER_PROFILES {
+        int user_id PK
+        varchar email UK
+        varchar phone
+        text bio
+        varchar address
+        mediumtext profile_photo
+        mediumtext cover_photo
+        timestamp updated_at
+    }
+
+    OTP_VERIFICATIONS {
+        int id PK
+        varchar email UK
+        varchar otp_hash
+        varchar name
+        varchar password_hash
+        enum role
+        tinyint attempts
+        tinyint resend_count
+        timestamp last_sent_at
+        timestamp expires_at
+        timestamp created_at
+    }
+
+    STUDENTS {
+        int id PK
+        varchar student_code UK
+        varchar name
+        varchar email
+        varchar phone
+        varchar course
+        varchar room_number
+        enum status
+        timestamp created_at
+    }
+
+    ROOMS {
+        int id PK
+        varchar room_number UK
+        varchar floor
+        varchar type
+        int capacity
+        int occupied
+        enum status
+        enum wing
+        enum category
+        enum washroom
+        varchar amenities
+        decimal monthly_rent
+        varchar photo
+        timestamp created_at
+    }
+
+    FEES {
+        int id PK
+        varchar payment_code UK
+        varchar student_name
+        varchar room_number
+        decimal amount
+        decimal room_charge
+        decimal electricity_charge
+        decimal food_charge
+        decimal cleaning_charge
+        decimal other_charge
+        date payment_date
+        enum method
+        enum status
+        timestamp created_at
+    }
+
+    COMPLAINTS {
+        int id PK
+        varchar complaint_code UK
+        varchar student_name
+        varchar room_number
+        varchar subject
+        text description
+        date complaint_date
+        enum priority
+        enum status
+        timestamp created_at
+    }
+
+    MESS_MENU {
+        int id PK
+        varchar day UK
+        varchar breakfast
+        varchar lunch
+        varchar dinner
+        enum status
+    }
+
+    NOTICES {
+        int id PK
+        varchar title
+        text message
+        enum audience
+        timestamp created_at
+    }
+
+    FACILITIES {
+        int id PK
+        enum category
+        varchar title
+        text details
+        varchar contact_name
+        varchar contact_phone
+        enum status
+        timestamp created_at
+    }
+
+    HOSTEL_SERVICES {
+        int id PK
+        varchar category
+        varchar title
+        text details
+        varchar contact_name
+        varchar contact_phone
+        enum status
+    }
+
+    MAINTENANCE_REQUESTS {
+        int id PK
+        varchar request_code UK
+        varchar student_name
+        varchar room_number
+        varchar title
+        text description
+        varchar photo
+        enum priority
+        enum status
+        timestamp created_at
+    }
+
+    LEAVE_REQUESTS {
+        int id PK
+        varchar leave_code UK
+        varchar student_name
+        varchar room_number
+        varchar reason
+        date start_date
+        date end_date
+        enum status
+        text admin_remarks
+        timestamp created_at
+    }
+
+    MESS_PHOTOS {
+        int id PK
+        varchar title
+        varchar photo
+        tinyint food_quality
+        text comment
+        timestamp created_at
+    }
+
+    GYM_PHOTOS {
+        int id PK
+        varchar title
+        varchar photo
+        text description
+        varchar equipment_type
+        enum status
+        timestamp created_at
+    }
+
+    ROOM_ISSUE_PHOTOS {
+        int id PK
+        varchar room_number
+        varchar title
+        varchar photo
+        text description
+        enum status
+        timestamp created_at
+    }
+
+    CAMPUS_GALLERY {
+        int id PK
+        varchar title
+        text description
+        varchar category
+        varchar image_url
+        mediumtext image_data
+        int display_order
+        tinyint is_published
+        tinyint is_cover
+        int created_by
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    APP_SETTINGS {
+        varchar setting_key PK
+        text setting_value
+        int updated_by
+        timestamp updated_at
+    }
+
+    USER_PREFERENCES {
+        int user_id PK
+        varchar theme
+        varchar accent_color
+        varchar layout
+        timestamp updated_at
+    }
+
+    STAFF {
+        int id PK
+        varchar staff_code UK
+        varchar name
+        varchar email
+        varchar phone
+        varchar department
+        varchar designation
+        varchar role
+        text responsibilities
+        enum status
+        timestamp created_at
+    }
+
+    CHAT_MESSAGES {
+        int id PK
+        int sender_id
+        int recipient_id
+        text body
+        tinyint is_read
+        timestamp read_at
+        timestamp created_at
+    }
+
+    USERS ||--|| USER_PROFILES : "user_id / email (logical)"
+    USERS ||--o{ CHAT_MESSAGES : "sender_id / recipient_id (logical)"
+    USERS ||--o{ CAMPUS_GALLERY : "created_by (logical)"
+    USERS ||--o{ APP_SETTINGS : "updated_by (logical)"
+    USERS ||--|| USER_PREFERENCES : "user_id (logical)"
+    STUDENTS }o--|| ROOMS : "room_number (logical association)"
+    FEES }o--|| ROOMS : "room_number (logical association)"
+    COMPLAINTS }o--|| ROOMS : "room_number (logical association)"
+    MAINTENANCE_REQUESTS }o--|| ROOMS : "room_number (logical association)"
+    LEAVE_REQUESTS }o--|| ROOMS : "room_number (logical association)"
+    ROOM_ISSUE_PHOTOS }o--|| ROOMS : "room_number (logical association)"
