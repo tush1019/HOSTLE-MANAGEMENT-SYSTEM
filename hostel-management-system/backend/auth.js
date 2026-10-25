@@ -35,7 +35,8 @@ function generateOtp() {
 function otpExpiry() {
   const d = new Date();
   d.setMinutes(d.getMinutes() + 5);
-  return d.toISOString().slice(0, 19).replace("T", " ");
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }
 
 /* Generic failure message — never reveals whether the email exists. */
@@ -197,7 +198,7 @@ router.post("/register", authRateLimit, async (req, res) => {
       console.error("OTP send failed:", sendErr.message);
     }
 
-    if (!emailSent) {
+    if (!emailSent || process.env.ALLOW_DEV_OTP === "true") {
       /* Deliver the code in the response so signup stays
          testable even when email provider is unavailable. */
       devOtp = otp;
@@ -266,7 +267,7 @@ router.post("/resend-otp", authRateLimit, async (req, res) => {
       console.error("OTP resend failed:", sendErr.message);
     }
 
-    if (!emailSent) {
+    if (!emailSent || process.env.ALLOW_DEV_OTP === "true") {
       devOtp = otp;
     }
 
@@ -303,7 +304,7 @@ router.post("/verify", authRateLimit, async (req, res) => {
     const code = String(otp).trim();
 
     const [rows] = await db.query(
-      "SELECT id, name, password_hash, role, attempts, expires_at FROM otp_verifications WHERE email = ? LIMIT 1",
+      "SELECT id, otp_hash, name, password_hash, role, attempts, expires_at FROM otp_verifications WHERE email = ? LIMIT 1",
       [cleanEmail]
     );
     if (rows.length === 0) {

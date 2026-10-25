@@ -28,7 +28,7 @@ function isEmailConfigured() {
 }
 
 /* ---------- EmailJS (HTTPS API) ---------- */
-async function sendViaEmailJs({ to, subject, text, html, toName }) {
+async function sendViaEmailJs({ to, subject, text, html, toName, code }) {
   const body = {
     service_id: process.env.EMAILJS_SERVICE_ID,
     template_id: process.env.EMAILJS_TEMPLATE_ID,
@@ -43,6 +43,10 @@ async function sendViaEmailJs({ to, subject, text, html, toName }) {
       subject,
       message: text,
       content: html,
+      code,
+      otp: code,
+      verification_code: code,
+      passcode: code,
       reply_to: process.env.EMAIL_FROM || process.env.EMAIL_USER || to,
     },
   };
@@ -114,7 +118,7 @@ async function sendOtpEmail(to, code, name) {
 
   // 1) Prefer EmailJS HTTPS API (works when SMTP ports are blocked)
   if (isEmailJsConfigured()) {
-    await sendViaEmailJs({ to, toName: safeName, subject, text, html });
+    await sendViaEmailJs({ to, toName: safeName, subject, text, html, code });
     return;
   }
 
