@@ -75,7 +75,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
     if (password.length < 6) { setError("Password must be at least 6 characters long."); return; }
     if (password !== confirm) { setError("Passwords do not match."); return; }
     if (role === "Admin") {
-      // Passkey validation is handled by the backend - do not expose passkey in frontend
+      if (!/^\d{6}$/.test(passkey)) { setError("Please enter the 6-digit admin passkey."); return; }
     }
     setLoading(true);
     try {
@@ -86,12 +86,12 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
           email: email.trim(),
           password,
           role,
-          ...(role === "Admin" ? {} : {}),
+          ...(role === "Admin" ? { passkey } : {}),
         }
       );
       setCreatedName(data.user?.name || name.trim());
       setInfo(data.message);
-      setStep("success");
+      setStep("otp");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account.");
     } finally {

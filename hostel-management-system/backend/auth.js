@@ -170,7 +170,9 @@ router.post("/register", authRateLimit, async (req, res) => {
       [cleanEmail]
     );
     if (existingOtp.length > 0) {
-      return res.status(409).json({ success: false, message: "A verification code was already sent to this email. Please check your inbox or resend." });
+      // A pending verification already exists for this email — replace it
+      // with the new registration instead of blocking the user.
+      await db.query("DELETE FROM otp_verifications WHERE email = ?", [cleanEmail]);
     }
 
     const otp = generateOtp();
