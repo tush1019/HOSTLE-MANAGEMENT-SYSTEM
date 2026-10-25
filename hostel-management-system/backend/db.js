@@ -84,6 +84,7 @@ async function createSqliteFallback() {
 
   const db = new Database();
   ensureSqliteSchema(db);
+  try { db.run(`ALTER TABLE users ADD COLUMN admin_id TEXT`); } catch (e) { /* column may already exist */ }
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
