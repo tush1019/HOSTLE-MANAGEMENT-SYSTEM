@@ -83,7 +83,6 @@ async function createSqliteFallback() {
   });
 
   const db = new Database();
-  const db = new Database();
   ensureSqliteSchema(db);
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
