@@ -527,6 +527,30 @@ async function ensureUserPreferencesTable(pool) {
   }
 }
 
+/* Staff table (MySQL, safe to re-run). */
+async function ensureStaffTable(pool) {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS staff (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        staff_code VARCHAR(20) UNIQUE,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(150) NULL,
+        phone VARCHAR(20) NULL,
+        department VARCHAR(100) NULL,
+        designation VARCHAR(100) NULL,
+        role VARCHAR(50) NOT NULL DEFAULT 'Staff',
+        responsibilities TEXT NULL,
+        status ENUM('Active', 'Inactive', 'On Leave') NOT NULL DEFAULT 'Active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log("[db] Verified table: staff");
+  } catch (error) {
+    console.warn("staff table migration skipped:", error.message);
+  }
+}
+
 async function getPool() {
   if (mysqlPool) return mysqlPool;
 
@@ -549,6 +573,7 @@ async function getPool() {
     await ensureCampusGalleryTable(mysqlPool);
     await ensureAppSettingsTable(mysqlPool);
     await ensureUserPreferencesTable(mysqlPool);
+    await ensureStaffTable(mysqlPool);
     return mysqlPool;
   } catch (error) {
     mysqlPool = null;

@@ -10,6 +10,8 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/students";
+import Staff from "./pages/Staff";
+
 import Rooms from "./pages/Room";
 import Fees from "./pages/Fees";
 import Complaints from "./pages/Complaints";
@@ -38,7 +40,7 @@ type Role = "Admin" | "Student" | null;
 type PublicPage = "Home" | "Login" | "Signup";
 
 const ADMIN_ONLY_ROUTES = new Set([
-  "Students", "Rooms", "Fees", "Reports", "Settings", "Campus Gallery", "Faculty Rooms",
+  "Students", "Staff", "Rooms", "Fees", "Reports", "Settings", "Campus Gallery", "Faculty Rooms",
   "Leave Management", "Maintenance Request", "Mess", "Housekeeping",
   "Water & Electricity", "Notices", "Medical Facilities", "Study Room",
 ]);
@@ -177,6 +179,7 @@ function App() {
         {activePage === "Dashboard" && <Dashboard role={role!} onNavigate={goPage} />}
         {activePage === "Profile" && <StudentProfile />}
         {activePage === "Students" && <Students search={globalSearch} role={role} />}
+{activePage === "Staff" && <Staff search={globalSearch} role={role} />}
         {activePage === "Rooms" && <Rooms search={globalSearch} />}
         {activePage === "Fees" && <Fees search={globalSearch} role={role} />}
         {activePage === "Complaints" && <Complaints search={globalSearch} role={role} />}

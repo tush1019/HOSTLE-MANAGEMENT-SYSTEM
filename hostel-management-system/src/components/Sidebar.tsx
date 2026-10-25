@@ -58,6 +58,7 @@ const STUDENT_ITEMS: DrawerItem[] = [
 const ADMIN_ITEMS: DrawerItem[] = [
   { route: "Dashboard", label: "Admin Overview", icon: LayoutDashboard, roles: ["Admin"], group: "overview" },
   { route: "Students", label: "Student Management", icon: Users, roles: ["Admin"], group: "records" },
+  { route: "Staff", label: "Staff Management", icon: Users, roles: ["Admin"], group: "records" },
   { route: "Rooms", label: "Room Management", icon: BedDouble, roles: ["Admin"], group: "accommodation" },
   { route: "Fees", label: "Fee Management", icon: CreditCard, roles: ["Admin"], group: "finance" },
   { route: "Leave Management", label: "Leave Approvals", icon: Calendar, roles: ["Admin"], group: "requests" },

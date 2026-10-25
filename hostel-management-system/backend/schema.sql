@@ -60,6 +60,21 @@ CREATE TABLE IF NOT EXISTS students (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Hostel staff / faculty management
+CREATE TABLE IF NOT EXISTS staff (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  staff_code VARCHAR(20) UNIQUE,
+  name VARCHAR(100) NOT NULL,
+  email VARCHAR(150) NULL,
+  phone VARCHAR(20) NULL,
+  department VARCHAR(100) NULL,
+  designation VARCHAR(100) NULL,
+  role VARCHAR(50) NOT NULL DEFAULT 'Staff',
+  responsibilities TEXT NULL,
+  status ENUM('Active', 'Inactive', 'On Leave') NOT NULL DEFAULT 'Active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Rooms
 CREATE TABLE IF NOT EXISTS rooms (
   id INT AUTO_INCREMENT PRIMARY KEY,
