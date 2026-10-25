@@ -52,9 +52,10 @@ const db = require("./db");
       [name, email, passwordHash]
     );
     const userId = result.insertId;
+    const adminId = `ADM${String(userId).padStart(4, "0")}`;
     await pool.query(
-      `UPDATE users SET admin_id = CONCAT('ADM', LPAD(?, 4, '0')) WHERE id = ?`,
-      [userId, userId]
+      `UPDATE users SET admin_id = ? WHERE id = ?`,
+      [adminId, userId]
     );
     await pool.query(`INSERT INTO user_profiles (user_id, email) VALUES (?, ?)`, [userId, email]);
 

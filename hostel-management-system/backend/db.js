@@ -32,6 +32,50 @@ function normalizeSQLiteQuery(sql) {
   return normalized;
 }
 
+const fs = require("fs");
+const path = require("path");
+
+function normalizeSqliteSchema(sql) {
+  let s = String(sql || "");
+  // Drop database-level statements
+  s = s.replace(/CREATE DATABASE[^;]*;/gi, "");
+  s = s.replace(/USE\s+\w+;/gi, "");
+  // ENUM(...) -> TEXT
+  s = s.replace(/ENUM\([^)]*\)/gi, "TEXT");
+  // DECIMAL(...) -> REAL
+  s = s.replace(/DECIMAL\([^)]*\)/gi, "REAL");
+  // MEDIUMTEXT/LONGTEXT -> TEXT
+  s = s.replace(/MEDIUMTEXT|LONGTEXT/gi, "TEXT");
+  // VARCHAR(n) -> TEXT
+  s = s.replace(/VARCHAR\(\d+\)/gi, "TEXT");
+  // INT AUTO_INCREMENT PRIMARY KEY -> INTEGER PRIMARY KEY AUTOINCREMENT
+  s = s.replace(/INT\s+AUTO_INCREMENT\s+PRIMARY\s+KEY/gi, "INTEGER PRIMARY KEY AUTOINCREMENT");
+  // TINYINT(...) -> INTEGER
+  s = s.replace(/TINYINT\(\d+\)/gi, "INTEGER");
+  // Remove KEY/INDEX/CONSTRAINT lines inside CREATE TABLE
+  s = s.replace(/,\s*(UNIQUE KEY|KEY|INDEX|CONSTRAINT)[^,\n)]*/gi, "");
+  // Remove ON UPDATE CURRENT_TIMESTAMP
+  s = s.replace(/\s+ON UPDATE CURRENT_TIMESTAMP/gi, "");
+  // Remove trailing commas before closing paren
+  s = s.replace(/,\s*\)/g, ")");
+  return s;
+}
+
+function ensureSqliteSchema(db) {
+  try {
+    const schemaPath = path.join(__dirname, "schema.sql");
+    const raw = fs.readFileSync(schemaPath, "utf8");
+    const normalized = normalizeSqliteSchema(raw);
+    // Extract CREATE TABLE statements
+    const regex = /CREATE TABLE IF NOT EXISTS[\s\S]*?;/gi;
+    const statements = normalized.match(regex) || [];
+    for (const stmt of statements) {
+      try { db.run(stmt); } catch (e) { /* ignore */ }
+    }
+  } catch (e) {
+    console.warn("SQLite schema load failed:", e.message);
+  }
+}
 async function createSqliteFallback() {
   const initSqlJs = require("sql.js");
   const { Database } = await initSqlJs({
@@ -39,7 +83,8 @@ async function createSqliteFallback() {
   });
 
   const db = new Database();
-
+  const db = new Database();
+  ensureSqliteSchema(db);
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
