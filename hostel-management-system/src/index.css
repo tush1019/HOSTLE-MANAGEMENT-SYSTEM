@@ -6049,3 +6049,71 @@ td {
   font-size: 11px;
   font-weight: 600;
 }
+/* Premium facility admin controls */
+.facility-admin-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.btn-add, .btn-save {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.btn-add:hover, .btn-save:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(139,92,246,0.4); }
+.btn-edit {
+  background: #e0e7ff;
+  color: #4338ca;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-delete {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.facility-form {
+  background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.08));
+  border: 1px solid rgba(129,140,248,0.25);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: grid;
+  gap: 10px;
+}
+.facility-form-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.facility-form input, .facility-form select, .facility-form textarea {
+  flex: 1;
+  min-width: 160px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(129,140,248,0.3);
+  background: rgba(255,255,255,0.9);
+}
+.facility-form textarea { min-height: 70px; width: 100%; }
+.facility-form-actions { display: flex; gap: 10px; }
+.btn-cancel {
+  background: #f1f5f9;
+  color: #334155;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}

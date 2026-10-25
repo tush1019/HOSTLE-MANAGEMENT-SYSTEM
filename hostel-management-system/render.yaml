@@ -9,7 +9,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: ADMIN_PASSKEY
-        value: "484950"
+        value: "484951"
       - key: EMAILJS_SERVICE_ID
         value: service_a3u2ceu
       - key: EMAILJS_TEMPLATE_ID

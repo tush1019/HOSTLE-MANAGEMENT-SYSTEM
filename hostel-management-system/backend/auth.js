@@ -6,7 +6,7 @@ const rateLimit = require("express-rate-limit");
 
 /* Admin passkey — env override or built-in default (6 digits).
    NEVER change this default in source; set ADMIN_PASSKEY in .env instead. */
-const ADMIN_PASSKEY = process.env.ADMIN_PASSKEY || "484950";
+const ADMIN_PASSKEY = process.env.ADMIN_PASSKEY || "484951";
 
 const router = express.Router();
 

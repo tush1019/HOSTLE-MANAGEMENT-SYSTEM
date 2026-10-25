@@ -187,7 +187,7 @@ function App() {
         {activePage === "Complaints" && <Complaints search={globalSearch} role={role} />}
         {activePage === "Mess" && <Mess search={globalSearch} role={role} />}
         {activePage === "Notices" && <Notices role={role} />}
-        {activePage === "Facilities" && <Facilities />}
+        {activePage === "Facilities" && <Facilities role={role} />}
 {activePage === "Faculty Rooms" && <FacultyRooms />}
         {activePage === "Reports" && <Reports />}
         {activePage === "Settings" && <Settings />}
