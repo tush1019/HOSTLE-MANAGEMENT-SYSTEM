@@ -26,6 +26,7 @@ const campusGalleryRoutes = require("./campus_gallery");
 const settingsRoutes = require("./settings");
 const facultyRoomRoutes = require("./faculty_rooms");
 const staffRoutes = require("./staff");
+const chatRoutes = require("./chat");
 
 const app = express();
 
@@ -128,6 +129,7 @@ app.use("/api/campus-gallery", campusGalleryRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/faculty-rooms", facultyRoomRoutes);
 app.use("/api/staff", staffRoutes);
+app.use("/api/chat", chatRoutes);
 
 // 404 for unknown API routes
 app.use("/api", (req, res) => {

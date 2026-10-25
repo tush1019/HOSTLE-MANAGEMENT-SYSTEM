@@ -11,6 +11,7 @@ import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/students";
 import Staff from "./pages/Staff";
+import Chat from "./pages/Chat";
 
 import Rooms from "./pages/Room";
 import Fees from "./pages/Fees";
@@ -49,7 +50,7 @@ const STUDENT_ROUTES = new Set([
   "Mess", "Complaints", "Leave Management", "Maintenance Request",
   "Study Room", "Gym Photos", "Facilities", "Entry & Exit Rules",
   "Medical Facilities", "WiFi Information", "Notices", "Laundry Services",
-  "Mess Photos", "Room Issue Photos", "Settings",
+  "Mess Photos", "Room Issue Photos", "Settings", "Chat",
 ]);
 function isAdminRoute(page: string): boolean { return ADMIN_ONLY_ROUTES.has(page); }
 function isStudentRoute(page: string): boolean { return STUDENT_ROUTES.has(page); }
@@ -180,6 +181,7 @@ function App() {
         {activePage === "Profile" && <StudentProfile />}
         {activePage === "Students" && <Students search={globalSearch} role={role} />}
 {activePage === "Staff" && <Staff search={globalSearch} role={role} />}
+{activePage === "Chat" && <Chat />}
         {activePage === "Rooms" && <Rooms search={globalSearch} />}
         {activePage === "Fees" && <Fees search={globalSearch} role={role} />}
         {activePage === "Complaints" && <Complaints search={globalSearch} role={role} />}

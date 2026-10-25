@@ -4,7 +4,7 @@ import {
   Settings, LogOut, Building2,
   ShieldAlert, Phone, Wifi, Droplets, Zap, MapPin,
   Wrench, Calendar, Image, Dumbbell, LayoutList, UserCircle,
-  X,
+  X, MessageCircle,
 } from "lucide-react";
 import { API_BASE_URL } from "../lib/api";
 
@@ -52,6 +52,7 @@ const STUDENT_ITEMS: DrawerItem[] = [
   { route: "Laundry Services", label: "Laundry Services", icon: Droplets, roles: ["Student"], group: "communication" },
   { route: "Mess Photos", label: "Mess Photos", icon: Utensils, roles: ["Student"], group: "communication" },
   { route: "Room Issue Photos", label: "Room Issue Photos", icon: Image, roles: ["Student"], group: "communication" },
+  { route: "Chat", label: "Chat with Admin", icon: MessageCircle, roles: ["Student"], group: "communication" },
   { route: "Settings", label: "Settings", icon: Settings, roles: ["Student"], group: "settings" },
 ];
 
@@ -69,6 +70,7 @@ const ADMIN_ITEMS: DrawerItem[] = [
   { route: "Study Room", label: "Study Room Management", icon: LayoutList, roles: ["Admin"], group: "facilities" },
   { route: "Gym Photos", label: "Gym & Facilities", icon: Dumbbell, roles: ["Admin"], group: "facilities" },
   { route: "Notices", label: "Notices & Announcements", icon: Bell, roles: ["Admin"], group: "communication" },
+  { route: "Chat", label: "Student Chat", icon: MessageCircle, roles: ["Admin"], group: "communication" },
   { route: "Medical Facilities", label: "Medical & Emergency Contacts", icon: Phone, roles: ["Admin"], group: "safety" },
   { route: "Reports", label: "Reports & Analytics", icon: BarChart3, roles: ["Admin"], group: "reports" },
   { route: "Settings", label: "Settings", icon: Settings, roles: ["Admin"], group: "settings" },

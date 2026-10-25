@@ -551,7 +551,29 @@ async function ensureStaffTable(pool) {
   }
 }
 
+/* Chat messages table (MySQL, safe to re-run). */
+async function ensureChatMessagesTable(pool) {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS chat_messages (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        sender_id INT NOT NULL,
+        recipient_id INT NOT NULL,
+        body TEXT NOT NULL,
+        is_read TINYINT(1) NOT NULL DEFAULT 0,
+        read_at TIMESTAMP NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_chat_sender (sender_id),
+        INDEX idx_chat_recipient (recipient_id)
+      )
+    `);
+    console.log("[db] Verified table: chat_messages");
+  } catch (error) {
+    console.warn("chat_messages table migration skipped:", error.message);
+  }
+}
 async function getPool() {
+
   if (mysqlPool) return mysqlPool;
 
   mysqlPool = mysql.createPool({
@@ -574,6 +596,7 @@ async function getPool() {
     await ensureAppSettingsTable(mysqlPool);
     await ensureUserPreferencesTable(mysqlPool);
     await ensureStaffTable(mysqlPool);
+    await ensureChatMessagesTable(mysqlPool);
     return mysqlPool;
   } catch (error) {
     mysqlPool = null;
