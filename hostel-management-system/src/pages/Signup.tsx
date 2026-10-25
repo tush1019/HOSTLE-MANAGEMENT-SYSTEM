@@ -52,6 +52,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
   const [otpError, setOtpError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [passkey, setPasskey] = useState("");
+  const [devOtp, setDevOtp] = useState<string | null>(null);
   const strength = strengthOf(password);
 
   /* Guard: validate OTP is exactly 6 digits before comparing with backend */
@@ -79,7 +80,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
     }
     setLoading(true);
     try {
-      const data = await postJson<{ message: string; user: { name: string } }>(
+      const data = await postJson<{ message: string; user: { name: string }; devOtp?: string }>(
         `${API_BASE_URL}/auth/register`,
         {
           name: name.trim(),
@@ -91,6 +92,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
       );
       setCreatedName(data.user?.name || name.trim());
       setInfo(data.message);
+      setDevOtp(data.devOtp || null);
       setStep("otp");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account.");
@@ -274,6 +276,11 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
                     />
                   ))}
                 </div>
+                {devOtp && (
+                  <div style={{ marginTop: 8, padding: "10px 12px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: 8, fontSize: 13, color: "#92400e" }}>
+                    Dev mode OTP: <strong style={{ fontFamily: "monospace", fontSize: 16 }}>{devOtp}</strong>
+                  </div>
+                )}
                 <div style={{ marginTop: 8, fontSize: "12px", color: "#64748b" }}>
                   <KeyRound size={14} style={{ marginRight: 4, verticalAlign: "middle" }} />
                   Enter the 6-digit code sent to your email
