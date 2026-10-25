@@ -105,7 +105,8 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
     e.preventDefault();
     setError("");
     setInfo("");
-    if (!validateOtpInput(otp)) {
+    const code = otp.replace(/\s/g, "");
+    if (!validateOtpInput(code)) {
       setError(otpError || "Invalid OTP.");
       return;
     }
@@ -113,7 +114,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
     try {
       const data = await postJson<{ message: string; user: { name: string; role: string } }>(
         `${API_BASE_URL}/auth/verify`,
-        { email: email.trim(), otp }
+        { email: email.trim(), otp: code }
       );
       setCreatedName(data.user?.name || email.trim());
       setInfo(data.message);
@@ -249,24 +250,51 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
                   {Array.from({ length: 6 }, (_, i) => (
                     <input
                       key={i}
+                      className="otp-box"
                       type="text"
                       inputMode="numeric"
+                      autoComplete="one-time-code"
                       maxLength={1}
                       value={otp[i] || ""}
                       onChange={(e) => {
-                        const val = e.target.value;
-                        if (/^\d$/.test(val)) {
-                          const next = otp;
-                          const arr = next.split("");
-                          arr[i] = val;
-                          setOtp(arr.join(""));
+                        const val = e.target.value.replace(/\D/g, "").slice(-1);
+                        if (val) {
+                          setOtp((prev) => {
+                            const chars = prev.split("");
+                            while (chars.length < 6) chars.push("");
+                            chars[i] = val;
+                            return chars.join("");
+                          });
                           if (i < 5) {
-                            const inputs = document.querySelectorAll<HTMLInputElement>('#otp-inputs input');
+                            const inputs = document.querySelectorAll<HTMLInputElement>(".otp-box");
                             if (inputs[i + 1]) (inputs[i + 1] as HTMLInputElement).focus();
                           }
                         }
                       }}
-                      id="otp-inputs"
+                      onKeyDown={(e) => {
+                        if (e.key === "Backspace") {
+                          setOtp((prev) => {
+                            const chars = prev.split("");
+                            while (chars.length < 6) chars.push("");
+                            chars[i] = "";
+                            return chars.join("");
+                          });
+                          if (i > 0 && !(otp[i])) {
+                            const inputs = document.querySelectorAll<HTMLInputElement>(".otp-box");
+                            if (inputs[i - 1]) (inputs[i - 1] as HTMLInputElement).focus();
+                          }
+                        }
+                      }}
+                      onPaste={(e) => {
+                        const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+                        if (text) {
+                          e.preventDefault();
+                          setOtp(text.padEnd(6, ""));
+                          const inputs = document.querySelectorAll<HTMLInputElement>(".otp-box");
+                          const idx = Math.min(text.length, 5);
+                          if (inputs[idx]) (inputs[idx] as HTMLInputElement).focus();
+                        }
+                      }}
                       style={{
                         width: "48px", height: "48px", textAlign: "center",
                         fontSize: "18px", border: "2px solid #e2e8f0",
