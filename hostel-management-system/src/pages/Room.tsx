@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BedDouble, Plus, Pencil, Trash2, Search } from "lucide-react";
-import { api } from "../lib/api";
+import { api, getStoredUser } from "../lib/api";
 import { formatINR } from "../lib/format";
 import { useToast } from "../components/Toast";
 import Modal from "../components/Modal";
@@ -44,7 +44,7 @@ function categoryClass(c: string) {
   return "room-category room-category-standard";
 }
 
-function Rooms({ search }: { search: string }) {
+function Rooms({ search, role }: { search: string; role?: string }) {
   const { notify } = useToast();
   const [rows, setRows] = useState<Room[]>([]);
   const [err, setErr] = useState("");
@@ -61,6 +61,22 @@ function Rooms({ search }: { search: string }) {
     setLoading(true);
     setErr("");
     try {
+      if (role === "Student") {
+        const user = getStoredUser();
+        if (!user?.email) {
+          setRows([]);
+          return;
+        }
+        const students = await api<any[]>(`/students?email=${encodeURIComponent(user.email)}`);
+        const rec = Array.isArray(students) && students.length ? students[0] : null;
+        if (!rec?.room) {
+          setRows([]);
+          return;
+        }
+        const rooms = await api<Room[]>(`/rooms?search=${encodeURIComponent(rec.room)}`);
+        setRows(Array.isArray(rooms) ? rooms.filter((r) => r.room === rec.room) : []);
+        return;
+      }
       const params = new URLSearchParams();
       const term = query ?? search;
       if (term) params.set("search", term);
@@ -153,9 +169,11 @@ function Rooms({ search }: { search: string }) {
           <h2>Rooms</h2>
           <p>Track rooms, beds, occupancy and availability.</p>
         </div>
-        <button type="button" className="primary-btn" onClick={openAdd}>
-          <Plus size={17} /> Add Room
-        </button>
+        {role !== "Student" && (
+          <button type="button" className="primary-btn" onClick={openAdd}>
+            <Plus size={17} /> Add Room
+          </button>
+        )}
       </div>
 
       <div className="room-summary-grid">
@@ -256,12 +274,16 @@ function Rooms({ search }: { search: string }) {
                     <td><img src={r.photo || "/rooms/boys-room.svg"} alt={`${r.room} ${r.wing}`} className="room-photo" /></td>
                     <td className="room-rent">{typeof r.monthlyRent === "number" ? formatINR(r.monthlyRent) : r.monthlyRent || "—"}</td>
                     <td style={{ textAlign: "right" }}>
-                      <button type="button" className="action-btn" onClick={() => openEdit(r)} aria-label="Edit">
-                        <Pencil size={16} />
-                      </button>
-                      <button type="button" className="action-btn" onClick={() => remove(r)} aria-label="Delete">
-                        <Trash2 size={16} />
-                      </button>
+                      {role !== "Student" && (
+                        <>
+                          <button type="button" className="action-btn" onClick={() => openEdit(r)} aria-label="Edit">
+                            <Pencil size={16} />
+                          </button>
+                          <button type="button" className="action-btn" onClick={() => remove(r)} aria-label="Delete">
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}

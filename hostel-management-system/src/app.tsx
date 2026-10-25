@@ -182,7 +182,7 @@ function App() {
         {activePage === "Students" && <Students search={globalSearch} role={role} />}
 {activePage === "Staff" && <Staff search={globalSearch} role={role} />}
 {activePage === "Chat" && <Chat />}
-        {activePage === "Rooms" && <Rooms search={globalSearch} />}
+        {activePage === "Rooms" && <Rooms search={globalSearch} role={role} />}
         {activePage === "Fees" && <Fees search={globalSearch} role={role} />}
         {activePage === "Complaints" && <Complaints search={globalSearch} role={role} />}
         {activePage === "Mess" && <Mess search={globalSearch} role={role} />}
