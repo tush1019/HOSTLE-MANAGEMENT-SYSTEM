@@ -346,7 +346,8 @@ router.post("/verify", authRateLimit, async (req, res) => {
     const userId = result.insertId;
 
     if (userRole === "Admin") {
-      await run(`UPDATE users SET admin_id = CONCAT('ADM', LPAD(?, 4, '0')) WHERE id = ?`, [userId, userId]);
+      const adminId = `ADM${String(userId).padStart(4, "0")}`;
+      await run(`UPDATE users SET admin_id = ? WHERE id = ?`, [adminId, userId]);
     }
 
     await run(`INSERT INTO user_profiles (user_id, email) VALUES (?, ?)`, [userId, cleanEmail]);
