@@ -11,16 +11,16 @@
   width: 100%;
   background: var(--bg);
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: 1.05fr 1fr;
   gap: 0;
-  max-width: 980px;
-  height: 100dvh;
-  margin: 0 auto;
+  max-width: none;
+  height: auto;
+  margin: 0;
   box-sizing: border-box;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border: none;
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: var(--shadow-strong);
+  box-shadow: none;
 }
 /* Neutralize legacy auth background overlays so the premium design owns the canvas. */
 .login-page::before,
