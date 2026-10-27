@@ -221,9 +221,12 @@ router.post("/register", authRateLimit, async (req, res) => {
       console.error("OTP send failed:", sendErr.message);
     }
 
-    if (process.env.NODE_ENV !== "production" && !emailSent) {
-      /* Deliver the code in the response only in non-production so signup
-         stays testable when email provider is unavailable. Never in prod. */
+    // Show a demo OTP when explicitly enabled (for demos/testing) or in
+    // non-production when email delivery is unavailable.
+    if (
+      process.env.ALLOW_DEV_OTP === "true" ||
+      (process.env.NODE_ENV !== "production" && !emailSent)
+    ) {
       devOtp = otp;
     }
 
@@ -290,7 +293,10 @@ router.post("/resend-otp", authRateLimit, async (req, res) => {
       console.error("OTP resend failed:", sendErr.message);
     }
 
-    if (process.env.NODE_ENV !== "production" && !emailSent) {
+    if (
+      process.env.ALLOW_DEV_OTP === "true" ||
+      (process.env.NODE_ENV !== "production" && !emailSent)
+    ) {
       devOtp = otp;
     }
 
