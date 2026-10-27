@@ -319,8 +319,9 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
                   ))}
                 </div>
                 {devOtp && (
-                  <div style={{ marginTop: 8, padding: "10px 12px", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: 8, fontSize: 13, color: "#92400e" }}>
-                    Dev mode OTP: <strong style={{ fontFamily: "monospace", fontSize: 16 }}>{devOtp}</strong>
+                  <div className="demo-otp-box">
+                    <span>DEMO OTP</span>
+                    <strong>{devOtp}</strong>
                   </div>
                 )}
                 <div style={{ marginTop: 8, fontSize: "12px", color: "#64748b" }}>
