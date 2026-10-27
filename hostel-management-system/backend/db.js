@@ -573,6 +573,17 @@ async function ensureChatMessagesTable(pool) {
     console.warn("chat_messages table migration skipped:", error.message);
   }
 }
+/* Ensure Faculty is allowed in users.role and otp_verifications.role (MySQL, safe to re-run). */
+async function ensureFacultyRoleEnum(pool) {
+  try {
+    await pool.query("ALTER TABLE users MODIFY COLUMN role ENUM('Admin', 'Student', 'Faculty') NOT NULL DEFAULT 'Student'");
+    await pool.query("ALTER TABLE otp_verifications MODIFY COLUMN role ENUM('Admin', 'Student', 'Faculty') NOT NULL DEFAULT 'Student'");
+    console.log("[db] Verified Faculty role support");
+  } catch (error) {
+    console.warn("faculty role migration skipped:", error.message);
+  }
+}
+
 async function getPool() {
 
   if (mysqlPool) return mysqlPool;
@@ -598,6 +609,7 @@ async function getPool() {
     await ensureUserPreferencesTable(mysqlPool);
     await ensureStaffTable(mysqlPool);
     await ensureChatMessagesTable(mysqlPool);
+    await ensureFacultyRoleEnum(mysqlPool);
     console.log("[db] MySQL pool connected successfully");
     return mysqlPool;
   } catch (error) {
