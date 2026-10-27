@@ -8,7 +8,23 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES
+        value: "8h"
       - key: ADMIN_PASSKEY
-        value: "484951"
+        sync: false
       - key: FACULTY_SIGNUP_KEY
-        value: "484955"
+        sync: false
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
