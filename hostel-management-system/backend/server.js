@@ -1,11 +1,30 @@
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+const path = require("path");
 const rateLimit = require("express-rate-limit");
 
-dotenv.config();
+// Always load the backend's own .env when present (local dev). On Render,
+// process environment variables take precedence and are never overridden.
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const db = require("./db");
+
+// Safe startup diagnostics: report presence only, never values.
+function envPresent(key) {
+  return process.env[key] ? "present" : "MISSING";
+}
+console.log("[startup] Environment check:", {
+  NODE_ENV: process.env.NODE_ENV || "MISSING",
+  JWT_SECRET: envPresent("JWT_SECRET"),
+  JWT_EXPIRES: envPresent("JWT_EXPIRES"),
+  ADMIN_PASSKEY: envPresent("ADMIN_PASSKEY"),
+  FACULTY_SIGNUP_KEY: envPresent("FACULTY_SIGNUP_KEY"),
+  DB_HOST: envPresent("DB_HOST"),
+  DB_USER: envPresent("DB_USER"),
+  DB_NAME: envPresent("DB_NAME"),
+  PORT: process.env.PORT || "5000 (default)",
+});
 
 const authRoutes = require("./auth");
 const studentRoutes = require("./students");
@@ -71,11 +90,16 @@ app.get("/api/health", (req, res) => {
 // Database test
 app.get("/api/db-test", async (req, res) => {
   try {
+    const pool = await db.getPool();
+    const driver = pool ? "mysql" : "sqlite";
     const [rows] = await db.query("SELECT 1 AS connected");
 
     res.json({
       success: true,
-      message: "MySQL connected successfully",
+      driver,
+      message: driver === "mysql"
+        ? "MySQL connected successfully"
+        : "SQLite fallback connected successfully",
       data: rows,
     });
   } catch (error) {
@@ -83,6 +107,7 @@ app.get("/api/db-test", async (req, res) => {
 
     res.status(500).json({
       success: false,
+      driver: db.getDatabaseType(),
       message: "Database connection failed",
       error: error.message,
     });
@@ -136,16 +161,18 @@ app.use("/api", (req, res) => {
   res.status(404).json({ success: false, message: "API route not found" });
 });
 
-const path = require("path");
 const fs = require("fs");
 const FRONTEND_DIST = path.join(__dirname, "..", "dist");
-app.use(express.static(FRONTEND_DIST));
+app.use(express.static(FRONTEND_DIST, { maxAge: 0, etag: false, lastModified: false }));
 
 /* SPA fallback: any other GET returns the frontend index.html */
 app.use((req, res, next) => {
   if (req.method === "GET" && !req.path.startsWith("/api")) {
     const indexFile = path.join(FRONTEND_DIST, "index.html");
     if (fs.existsSync(indexFile)) {
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
       return res.sendFile(indexFile);
     }
     return res.status(503).send(
@@ -165,7 +192,20 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: "Internal server error" });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`HostelHub Backend running on http://localhost:${PORT}`);
-});
+// Start server after initializing DB so startup logs report the active driver.
+(async () => {
+  try {
+    const pool = await db.getPool();
+    if (pool) {
+      console.log("[db] Startup: MySQL pool connected successfully");
+    } else {
+      console.warn("[db] Startup: MySQL unavailable; using SQLite fallback");
+    }
+  } catch (error) {
+    console.warn("[db] Startup: database initialization failed:", error.message);
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`HostelHub Backend running on port ${PORT}`);
+  });
+})();

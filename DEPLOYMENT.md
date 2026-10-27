@@ -46,3 +46,24 @@ Configure either EmailJS or SMTP variables from `backend/.env.example`.
 The MySQL Faculty role migration runs automatically only after a successful
 MySQL connection. Look for `[db] Verified Faculty role support` in the logs.
 Do not assume the migration succeeded unless that log appears.
+## Service verification
+
+Verify the **same Render service** that shows these logs:
+
+- `Running 'npm start'`
+- `HOSTEL BACKEND/server.js` or `hostel-management-system/backend/server.js`
+- `HostelHub Backend running on port ...`
+
+Check **Settings -> Root Directory**:
+
+- If it is `HOSTEL BACKEND`, Render uses `HOSTEL BACKEND/package.json` and its `npm start`.
+- If it is the repository root, Render uses the root `package.json` / `render.yaml` start command.
+
+Environment variables must be added to **that exact service**. If duplicate backend services exist, disable or delete the extras to avoid deploying one service with variables and another without them.
+
+## Startup diagnostics
+
+The backend logs an environment check at startup showing only `present` or `MISSING`
+for required variables. It never logs secret values. If `JWT_SECRET` shows `MISSING`,
+add it to the same Render service and redeploy.
+
