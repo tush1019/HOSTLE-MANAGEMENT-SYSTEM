@@ -3,10 +3,12 @@ const bcrypt = require("bcryptjs");
 const db = require("./db");
 const { sendOtpEmail, isEmailConfigured } = require("./mailer");
 const rateLimit = require("express-rate-limit");
+const { signToken, authMiddleware, requireRole } = require("./middleware/auth");
 
 /* Admin passkey — env override or built-in default (6 digits).
    NEVER change this default in source; set ADMIN_PASSKEY in .env instead. */
 const ADMIN_PASSKEY = process.env.ADMIN_PASSKEY || "484951";
+const FACULTY_SIGNUP_KEY = process.env.FACULTY_SIGNUP_KEY;
 
 const router = express.Router();
 
@@ -66,7 +68,7 @@ async function comparePasswordOrDummy(password, user) {
    ============================================================ */
 router.post("/login", authRateLimit, async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, passkey } = req.body;
 
     if (!email || !password) {
       return res.status(401).json(GENERIC_AUTH_FAIL);
@@ -90,9 +92,14 @@ router.post("/login", authRateLimit, async (req, res) => {
       return res.status(401).json(GENERIC_AUTH_FAIL);
     }
 
+    if (user.role === "Admin" && String(passkey || "").trim() !== ADMIN_PASSKEY) {
+      return res.status(401).json(GENERIC_AUTH_FAIL);
+    }
+
     res.json({
       success: true,
       message: "Login successful",
+      token: signToken({ id: user.id, email: user.email, role: user.role, admin_id: user.admin_id || null }),
       user: {
         id: user.id,
         name: user.name,
@@ -141,7 +148,7 @@ router.post("/register", authRateLimit, async (req, res) => {
     }
 
     const userRole = role || "Student";
-    if (!["Admin", "Student"].includes(userRole)) {
+    if (!["Admin", "Student", "Faculty"].includes(userRole)) {
       return res.status(400).json({ success: false, message: "Invalid role" });
     }
 
@@ -151,6 +158,22 @@ router.post("/register", authRateLimit, async (req, res) => {
         return res.status(400).json({
           success: false,
           message: "Admin registration requires the correct 6-digit passkey.",
+        });
+      }
+    }
+
+    // Faculty registration requires the configured backend pass key.
+    if (userRole === "Faculty") {
+      if (!FACULTY_SIGNUP_KEY) {
+        return res.status(503).json({
+          success: false,
+          message: "Faculty signup is not configured. Set FACULTY_SIGNUP_KEY in the backend environment.",
+        });
+      }
+      if (!passkey || String(passkey).trim() !== FACULTY_SIGNUP_KEY) {
+        return res.status(400).json({
+          success: false,
+          message: "Faculty registration requires the correct 6-digit pass key.",
         });
       }
     }
@@ -198,9 +221,9 @@ router.post("/register", authRateLimit, async (req, res) => {
       console.error("OTP send failed:", sendErr.message);
     }
 
-    if (!emailSent || process.env.ALLOW_DEV_OTP === "true") {
-      /* Deliver the code in the response so signup stays
-         testable even when email provider is unavailable. */
+    if (process.env.NODE_ENV !== "production" && !emailSent) {
+      /* Deliver the code in the response only in non-production so signup
+         stays testable when email provider is unavailable. Never in prod. */
       devOtp = otp;
     }
 
@@ -267,7 +290,7 @@ router.post("/resend-otp", authRateLimit, async (req, res) => {
       console.error("OTP resend failed:", sendErr.message);
     }
 
-    if (!emailSent || process.env.ALLOW_DEV_OTP === "true") {
+    if (process.env.NODE_ENV !== "production" && !emailSent) {
       devOtp = otp;
     }
 
@@ -352,12 +375,14 @@ router.post("/verify", authRateLimit, async (req, res) => {
 
     await run(`INSERT INTO user_profiles (user_id, email) VALUES (?, ?)`, [userId, cleanEmail]);
 
-    const studentCode = "STU" + String(userId).padStart(4, "0");
-    await run(
-      `INSERT INTO students (student_code, name, email, phone, course, room_number, status)
-       VALUES (?, ?, ?, NULL, NULL, NULL, 'Active')`,
-      [studentCode, cleanName, cleanEmail]
-    );
+    const studentCode = userRole === "Student" ? "STU" + String(userId).padStart(4, "0") : null;
+    if (userRole === "Student") {
+      await run(
+        `INSERT INTO students (student_code, name, email, phone, course, room_number, status)
+         VALUES (?, ?, ?, NULL, NULL, NULL, 'Active')`,
+        [studentCode, cleanName, cleanEmail]
+      );
+    }
 
     await db.query("DELETE FROM otp_verifications WHERE email = ?", [cleanEmail]);
 
@@ -370,6 +395,7 @@ router.post("/verify", authRateLimit, async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Account created successfully!",
+      token: signToken({ id: userId, email: cleanEmail, role: userRole, admin_id: userRole === "Admin" ? (adminRow[0] && adminRow[0].admin_id) : null }),
       user: {
         id: userId,
         name: cleanName,
@@ -387,6 +413,39 @@ router.post("/verify", authRateLimit, async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to create account. Please try again." });
   } finally {
     if (connection) connection.release();
+  }
+});
+
+/* ============================================================
+   PROVISION FACULTY — Admin only
+   POST /api/auth/provision-faculty { name, email, password }
+   Creates a Faculty login account. No self-service role elevation.
+   ============================================================ */
+router.post("/provision-faculty", authMiddleware, requireRole("Admin"), async (req, res) => {
+  try {
+    const { name, email, password } = req.body || {};
+    const cleanName = String(name || "").trim();
+    const cleanEmail = toCleanEmail(email);
+    if (!cleanName || !cleanEmail || !password || String(password).length < 6) {
+      return res.status(400).json({ success: false, message: "Name, valid email and password (min 6 chars) are required" });
+    }
+    if (!isValidEmail(cleanEmail)) {
+      return res.status(400).json({ success: false, message: "Invalid email" });
+    }
+    const [existing] = await db.query("SELECT id FROM users WHERE email = ? LIMIT 1", [cleanEmail]);
+    if (existing.length) {
+      return res.status(409).json({ success: false, message: "An account with this email already exists" });
+    }
+    const hash = await hashValue(password);
+    const [result] = await db.query(
+      "INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, 'Faculty', 1)",
+      [cleanName, cleanEmail, hash]
+    );
+    await db.query("INSERT INTO user_profiles (user_id, email) VALUES (?, ?)", [result.insertId, cleanEmail]);
+    res.status(201).json({ success: true, message: "Faculty account created", data: { id: result.insertId, email: cleanEmail, role: "Faculty" } });
+  } catch (error) {
+    console.error("Provision faculty error:", error);
+    res.status(500).json({ success: false, message: "Failed to create Faculty account" });
   }
 });
 

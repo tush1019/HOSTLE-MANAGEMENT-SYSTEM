@@ -1,4 +1,4 @@
-﻿import { useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import {
   Building2, UserRound, Mail, Lock, UserPlus,
   CheckCircle2, ArrowLeft, Eye, EyeOff,
@@ -9,7 +9,7 @@ import heroImage from "../assets/hero.png";
 
 type SignupProps = { onSignup: () => void; onLogin: () => void; onBackHome: () => void };
 type Step = "details" | "otp" | "success";
-type Role = "Admin" | "Student";
+type Role = "Admin" | "Student" | "Faculty";
 
 async function postJson<T>(url: string, body: unknown): Promise<T> {
   const response = await fetch(url, {
@@ -17,11 +17,26 @@ async function postJson<T>(url: string, body: unknown): Promise<T> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = (await response.json()) as T & { success?: boolean; message?: string };
-  if (!response.ok || data.success === false) {
-    throw new Error(data.message || `Request failed (${response.status})`);
+
+  const rawText = await response.text();
+  let data: any = null;
+  if (rawText.trim()) {
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      throw new Error(
+        `Server returned an invalid response (${response.status}). ${rawText.slice(0, 160)}`
+      );
+    }
   }
-  return data;
+
+  if (!response.ok) {
+    throw new Error(data?.message || `Request failed (${response.status})`);
+  }
+  if (data && data.success === false) {
+    throw new Error(data.message || "Request failed.");
+  }
+  return data as T;
 }
 
 function strengthOf(value: string) {
@@ -75,8 +90,8 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError("Please enter a valid email address."); return; }
     if (password.length < 6) { setError("Password must be at least 6 characters long."); return; }
     if (password !== confirm) { setError("Passwords do not match."); return; }
-    if (role === "Admin") {
-      if (!/^\d{6}$/.test(passkey)) { setError("Please enter the 6-digit admin passkey."); return; }
+    if (role === "Admin" || role === "Faculty") {
+      if (!/^\d{6}$/.test(passkey)) { setError(role === "Admin" ? "Please enter the 6-digit admin passkey." : "Please enter the 6-digit faculty pass key."); return; }
     }
     setLoading(true);
     try {
@@ -87,7 +102,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
           email: email.trim(),
           password,
           role,
-          ...(role === "Admin" ? { passkey } : {}),
+          ...(role === "Admin" || role === "Faculty" ? { passkey } : {}),
         }
       );
       setCreatedName(data.user?.name || name.trim());
@@ -137,7 +152,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
         </div>
         <div className="signup-welcome">
           <h2>Join HostelHub<br />in seconds.</h2>
-          <p>Create your account with a secure password â€” fast and free for every resident.</p>
+          <p>Create your account with a secure password — fast and free for every resident.</p>
           <div className="signup-features">
             <div><CheckCircle2 size={16} /> Secure password signup</div>
             <div><CheckCircle2 size={16} /> Role-based dashboards</div>
@@ -160,7 +175,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
           </p>
 
           <div className="role-tabs" style={step === "success" ? { display: "none" } : undefined}>
-            {(["Student", "Admin"] as Role[]).map((r) => (
+            {(["Student", "Faculty", "Admin"] as Role[]).map((r) => (
               <button
                 key={r}
                 type="button"
@@ -212,14 +227,13 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
                     onChange={(e) => { setConfirm(e.target.value); setError(""); }} />
                 </div>
               </div>
-              {role === "Admin" && (
+              {(role === "Admin" || role === "Faculty") && (
                 <div className="signup-field">
-                  <label>Admin Passkey</label>
+                  <label>{role === "Admin" ? "Admin Passkey" : "Faculty Pass Key"}</label>
                   <div className="signup-input-wrapper">
                     <KeyRound size={17} />
-                    <input type="password" inputMode="numeric" maxLength={6}
-                      placeholder="6-digit admin passkey" value={passkey} required
-                      autoComplete="off"
+                      <input type="password" inputMode="numeric" maxLength={6}
+                      placeholder={role === "Admin" ? "6-digit admin passkey" : "6-digit faculty pass key"} value={passkey} required
                       onChange={(e) => { setPasskey(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }} />
                   </div>
                 </div>
@@ -330,7 +344,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
           {step === "success" && (
             <div className="signup-success-card">
               <div className="success-circle"><CheckCircle2 size={44} /></div>
-              <h2>Welcome, {createdName}! ðŸŽ‰</h2>
+              <h2>Welcome, {createdName}! 🎉</h2>
               <p>{info || "Account created successfully."}</p>
               <div className="success-user">
                 <strong>{createdName}</strong>
@@ -341,7 +355,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
                   Continue to Login <ArrowLeft size={16} style={{ transform: "rotate(180deg)" }} />
                 </button>
               </div>
-              <p className="success-loading">Redirecting you to loginâ€¦</p>
+              <p className="success-loading">Redirecting you to login…</p>
             </div>
           )}
 
@@ -357,3 +371,4 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
 }
 
 export default Signup;
+

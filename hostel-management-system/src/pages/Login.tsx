@@ -13,14 +13,14 @@ import { API_BASE_URL } from "../lib/api";
 import heroImage from "../assets/hero.png";
 
 type LoginProps = {
-  onLogin: (role: "Admin" | "Student") => void;
+  onLogin: (role: "Admin" | "Student" | "Faculty") => void;
   onSignup?: () => void;
   onHome?: () => void;
 };
 
 function Login({ onLogin, onSignup, onHome }: LoginProps) {
   const [role, setRole] =
-    useState<"Admin" | "Student">("Admin");
+    useState<"Admin" | "Student" | "Faculty">("Admin");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +34,7 @@ function Login({ onLogin, onSignup, onHome }: LoginProps) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const switchRole = (next: "Admin" | "Student") => {
+  const switchRole = (next: "Admin" | "Student" | "Faculty") => {
     setRole(next);
     setError("");
     setPasskeyError("");
@@ -75,6 +75,7 @@ function Login({ onLogin, onSignup, onHome }: LoginProps) {
           body: JSON.stringify({
             email: email.trim(),
             password: password,
+             passkey: role === "Admin" ? passkey : undefined,
           }),
         }
       );
@@ -110,6 +111,8 @@ function Login({ onLogin, onSignup, onHome }: LoginProps) {
         "hostelUser",
         JSON.stringify(safeUser)
       );
+       if (data.token) localStorage.setItem("hostelToken", data.token);
+
 
       localStorage.setItem(
         "hostelRole",
@@ -220,6 +223,19 @@ function Login({ onLogin, onSignup, onHome }: LoginProps) {
             >
               <UserRound size={17} />
               Student
+            </button>
+
+            <button
+              type="button"
+              className={
+                role === "Faculty"
+                  ? "role-active"
+                  : ""
+              }
+              onClick={() => switchRole("Faculty")}
+            >
+              <UserRound size={17} />
+              Faculty
             </button>
 
           </div>

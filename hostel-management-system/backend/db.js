@@ -91,7 +91,7 @@ async function createSqliteFallback() {
       name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       password TEXT NOT NULL,
-      role TEXT NOT NULL DEFAULT 'Student' CHECK (role IN ('Admin', 'Student')),
+      role TEXT NOT NULL DEFAULT 'Student' CHECK (role IN ('Admin', 'Student', 'Faculty')),
       admin_id TEXT UNIQUE,
       email_verified INTEGER NOT NULL DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -105,7 +105,7 @@ async function createSqliteFallback() {
       otp_hash TEXT NOT NULL,
       name TEXT NOT NULL,
       password_hash TEXT NOT NULL,
-      role TEXT NOT NULL DEFAULT 'Student' CHECK (role IN ('Admin', 'Student')),
+      role TEXT NOT NULL DEFAULT 'Student' CHECK (role IN ('Admin', 'Student', 'Faculty')),
       attempts INTEGER NOT NULL DEFAULT 0,
       resend_count INTEGER NOT NULL DEFAULT 1,
       last_sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -598,8 +598,10 @@ async function getPool() {
     await ensureUserPreferencesTable(mysqlPool);
     await ensureStaffTable(mysqlPool);
     await ensureChatMessagesTable(mysqlPool);
+    console.log("[db] MySQL pool connected successfully");
     return mysqlPool;
   } catch (error) {
+    console.warn("[db] MySQL unavailable; using SQLite fallback:", error.message);
     mysqlPool = null;
     return null;
   }
@@ -658,6 +660,9 @@ const db = {
   /* Expose the pool so auth can wrap linked inserts in a transaction (MySQL).
      Returns null when MySQL is unavailable (SQLite fallback path). */
   getPool,
+  getDatabaseType() {
+    return mysqlPool ? "mysql" : "sqlite";
+  },
 };
 
 module.exports = db;

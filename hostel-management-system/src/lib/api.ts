@@ -1,10 +1,6 @@
 /* Shared API helper — all backend calls go through here. */
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  (typeof window !== "undefined" && window.location.hostname === "localhost"
-    ? "http://localhost:5000/api"
-    : "/api");
+export const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 type ApiOptions = {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -18,20 +14,18 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
-  let data: {
-    success?: boolean;
-    message?: string;
-    data?: T;
-  } & T;
-
-  try {
-    data = await response.json();
-  } catch {
-    throw new Error("Server returned an invalid response.");
+  const rawText = await response.text();
+  let data: any = null;
+  if (rawText.trim()) {
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      throw new Error(`Server returned an invalid response (${response.status}). ${rawText.slice(0, 160)}`);
+    }
   }
 
-  if (!response.ok || data.success === false) {
-    throw new Error(data.message || `Request failed (${response.status})`);
+  if (!response.ok || data?.success === false) {
+    throw new Error(data?.message || `Request failed (${response.status})`);
   }
 
   // Endpoints return { success, data } or { success, data, summary }.
@@ -51,19 +45,21 @@ export async function apiRaw<T>(path: string, options: ApiOptions = {}): Promise
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
-  let data: T & { success?: boolean; message?: string };
-
-  try {
-    data = await response.json();
-  } catch {
-    throw new Error("Server returned an invalid response.");
+  const rawText = await response.text();
+  let data: any = null;
+  if (rawText.trim()) {
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      throw new Error(`Server returned an invalid response (${response.status}). ${rawText.slice(0, 160)}`);
+    }
   }
 
-  if (!response.ok || data.success === false) {
-    throw new Error(data.message || `Request failed (${response.status})`);
+  if (!response.ok || data?.success === false) {
+    throw new Error(data?.message || `Request failed (${response.status})`);
   }
 
-  return data;
+  return data as T;
 }
 
 export function getStoredUser(): { id: number; name: string; email: string; role: string; admin_id?: string | null } | null {
@@ -78,8 +74,10 @@ export function getStoredUser(): { id: number; name: string; email: string; role
 /* Headers sent with every authenticated request so backend routes can
    verify the caller's identity and role (stateless localStorage session). */
 export function authHeaders(): Record<string, string> {
-  const user = getStoredUser();
   const headers: Record<string, string> = {};
+  const token = localStorage.getItem("hostelToken");
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const user = getStoredUser();
   if (user) {
     headers["x-user-id"] = String(user.id);
     headers["x-user-email"] = String(user.email || "");
