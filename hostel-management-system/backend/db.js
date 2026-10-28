@@ -67,8 +67,12 @@ function ensureSqliteSchema(db) {
     const raw = fs.readFileSync(schemaPath, "utf8");
     const normalized = normalizeSqliteSchema(raw);
     // Extract CREATE TABLE statements
-    const regex = /CREATE TABLE IF NOT EXISTS[\s\S]*?;/gi;
-    const statements = normalized.match(regex) || [];
+    const createRegex = /CREATE TABLE IF NOT EXISTS[\s\S]*?;/gi;
+    const insertRegex = /INSERT (?:OR IGNORE )?INTO[\s\S]*?;/gi;
+    const statements = [
+      ...(normalized.match(createRegex) || []),
+      ...(normalized.match(insertRegex) || []),
+    ];
     for (const stmt of statements) {
       try { db.run(stmt); } catch (e) { /* ignore */ }
     }
