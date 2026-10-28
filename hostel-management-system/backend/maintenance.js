@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("./db");
+const { getFacultyScope } = require("./facultyScope");
 const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
@@ -28,6 +29,7 @@ router.get("/", authMiddleware, async (req, res) => {
     const room = (req.query.room || "").trim();
     const student = (req.query.student || "").trim();
     const isAdmin = req.user.role === "Admin";
+    const isFaculty = req.user.role === "Faculty";
 
     let sql = `SELECT ${MAINT_SELECT} FROM maintenance_requests`;
     const params = [];
@@ -46,11 +48,19 @@ router.get("/", authMiddleware, async (req, res) => {
       where.push("room_number = ?");
       params.push(room);
     }
-    if (!isAdmin) {
+    if (isFaculty) {
+      const scope = await getFacultyScope(req.user.email);
+      if (scope.rooms.length === 0) {
+        return res.json({ success: true, data: [] });
+      }
+      const placeholders = scope.rooms.map(() => "?").join(",");
+      where.push("TRIM(room_number) IN (" + placeholders + ")");
+      params.push(...scope.rooms);
+    } else if (!isAdmin) {
       const name = await resolveStudentName(req);
       where.push("student_name = ?");
       params.push(name);
-    } else if (student) {
+    } else if (student && isAdmin) {
       where.push("student_name = ?");
       params.push(student);
     }
@@ -76,7 +86,7 @@ router.get("/:id", authMiddleware, async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ success: false, message: "Maintenance request not found" });
     }
-    if (req.user.role !== "Admin") {
+    if (req.user.role === "Student") {
       const name = await resolveStudentName(req);
       if (rows[0].studentName !== name) {
         return res.status(403).json({ success: false, message: "Forbidden" });
@@ -93,6 +103,9 @@ router.get("/:id", authMiddleware, async (req, res) => {
 router.post("/", authMiddleware, async (req, res) => {
   try {
     const { studentName, roomNumber, title, description, photo, priority } = req.body;
+    if (req.user.role === "Faculty") {
+      return res.status(403).json({ success: false, message: "Forbidden" });
+    }
     const isAdmin = req.user.role === "Admin";
     const resolvedName = isAdmin && studentName && studentName.trim()
       ? studentName.trim()

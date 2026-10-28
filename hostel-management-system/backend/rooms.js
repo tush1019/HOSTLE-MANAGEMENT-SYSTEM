@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("./db");
+const { getFacultyScope } = require("./facultyScope");
 const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
@@ -76,7 +77,23 @@ router.get("/", async (req, res) => {
     }
 
     const isAdmin = req.user.role === "Admin";
-    if (!isAdmin) {
+    const isFaculty = req.user.role === "Faculty";
+    if (isFaculty) {
+      const scope = await getFacultyScope(req.user.email);
+      if (scope.rooms.length === 0 && scope.wings.length === 0) {
+        return res.json({ success: true, data: [] });
+      }
+      const roomClauses = [];
+      const roomParams = [];
+      if (scope.rooms.length) { roomClauses.push("TRIM(room_number) IN (" + scope.rooms.map(() => "?").join(",") + ")"); roomParams.push(...scope.rooms); }
+      if (scope.wings.length) { roomClauses.push("TRIM(wing) IN (" + scope.wings.map(() => "?").join(",") + ")"); roomParams.push(...scope.wings); }
+      if (roomClauses.length) {
+        where.push("(" + roomClauses.join(" OR ") + ")");
+        params.push(...roomParams);
+      } else {
+        return res.json({ success: true, data: [] });
+      }
+    } else if (!isAdmin) {
       const roomNumber = await resolveStudentRoom(req);
       if (!roomNumber) return res.json({ success: true, data: [] });
       where.push("room_number = ?");

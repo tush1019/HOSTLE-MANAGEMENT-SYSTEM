@@ -1,5 +1,6 @@
 const express = require("express");
 const db = require("./db");
+const { getFacultyScope } = require("./facultyScope");
 const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
@@ -24,6 +25,8 @@ router.get("/", authMiddleware, async (req, res) => {
   try {
     const search = (req.query.search || "").trim();
     const isAdmin = req.user.role === "Admin";
+    const isFaculty = req.user.role === "Faculty";
+    const isPrivileged = isAdmin || isFaculty;
 
     let sql = `SELECT id, complaint_code AS complaintCode, student_name AS student,
                  room_number AS room, subject, description,
@@ -33,7 +36,15 @@ router.get("/", authMiddleware, async (req, res) => {
     const params = [];
     const where = [];
 
-    if (!isAdmin) {
+    if (isFaculty) {
+      const scope = await getFacultyScope(req.user.email);
+      if (scope.rooms.length === 0) {
+        return res.json({ success: true, data: [], summary: { total: 0, pending: 0, inProgress: 0, resolved: 0 } });
+      }
+      const placeholders = scope.rooms.map(() => "?").join(",");
+      where.push("TRIM(room_number) IN (" + placeholders + ")");
+      params.push(...scope.rooms);
+    } else if (!isAdmin) {
       const name = await resolveStudentName(req);
       where.push("student_name = ?");
       params.push(name);
@@ -49,7 +60,7 @@ router.get("/", authMiddleware, async (req, res) => {
     const [rows] = await db.query(sql, params);
 
     let summary = {};
-    if (isAdmin) {
+    if (isPrivileged) {
       const [summaryRows] = await db.query(`
         SELECT COUNT(*) AS total,
                COALESCE(SUM(status = 'Pending'), 0) AS pending,
@@ -72,6 +83,9 @@ router.post("/", authMiddleware, async (req, res) => {
   try {
     const { student, room, subject, description, priority, status } = req.body;
 
+    if (req.user.role === "Faculty") {
+      return res.status(403).json({ success: false, message: "Forbidden" });
+    }
     const isAdmin = req.user.role === "Admin";
     const studentName = isAdmin
       ? (student && student.trim() ? student.trim() : (await resolveStudentName(req)))
