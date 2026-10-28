@@ -412,7 +412,22 @@ html {
   border: 1px solid rgba(129, 140, 248, 0.3) !important;
   position: relative;
   overflow: hidden;
+  color: #101828 !important;
 }
+.admin-heading::after {
+  content: "";
+  position: absolute;
+  right: -50px;
+  top: -50px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: rgba(129, 140, 248, 0.08);
+}
+.admin-heading h2 { color: #101828 !important; }
+.admin-heading p { color: #4b5563 !important; }
+.admin-heading .admin-eyebrow { color: #4f46e5 !important; }
+.admin-pill { background: rgba(79, 70, 229, 0.12) !important; color: #4f46e5 !important; border: 1px solid rgba(79, 70, 229, 0.3) !important; }
 .admin-heading::after {
   content: "";
   position: absolute;

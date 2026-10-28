@@ -4,13 +4,14 @@ const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
 router.use(authMiddleware);
-router.use(requireRole("Faculty", "Admin"));
+// Note: role checks are applied per-route below. /mine is Student-only;
+// all other endpoints are Faculty/Admin only.
 
 function facultyId(req) { return Number(req.user.id); }
 function isAdmin(req) { return req.user.role === "Admin"; }
 function code(prefix) { return prefix + Date.now().toString(36).toUpperCase(); }
 
-router.get("/sessions", async (req, res) => {
+router.get("/sessions", requireRole("Faculty", "Admin"), async (req, res) => {
   try {
     const { date, subject, class_name } = req.query;
     const params = [];
@@ -32,7 +33,7 @@ router.get("/sessions", async (req, res) => {
   }
 });
 
-router.post("/sessions", async (req, res) => {
+router.post("/sessions", requireRole("Faculty", "Admin"), async (req, res) => {
   try {
     const { subject, className, class_name, sessionDate, date, startTime, start_time, endTime, end_time, room } = req.body;
     const cls = class_name || className;
@@ -63,7 +64,7 @@ router.post("/sessions", async (req, res) => {
   }
 });
 /* GET session */
-router.get("/sessions/:id", async (req, res) => {
+router.get("/sessions/:id", requireRole("Faculty", "Admin"), async (req, res) => {
   try {
     const params = [req.params.id];
     let sql = `SELECT id, session_code AS sessionCode, faculty_user_id AS facultyUserId, subject, class_name AS className, session_date AS sessionDate, start_time AS startTime, end_time AS endTime, room_number AS room, status, created_at AS createdAt FROM attendance_sessions WHERE id = ?`;
@@ -76,7 +77,7 @@ router.get("/sessions/:id", async (req, res) => {
   }
 });
 
-router.get("/sessions/:id/records", async (req, res) => {
+router.get("/sessions/:id/records", requireRole("Faculty", "Admin"), async (req, res) => {
   try {
     const params = [req.params.id];
     let sql = `SELECT id FROM attendance_sessions WHERE id = ?`;
@@ -94,7 +95,7 @@ router.get("/sessions/:id/records", async (req, res) => {
   }
 });
 
-router.put("/sessions/:id/records", async (req, res) => {
+router.put("/sessions/:id/records", requireRole("Faculty", "Admin"), async (req, res) => {
   try {
     const params = [req.params.id];
     let sql = `SELECT id FROM attendance_sessions WHERE id = ?`;
@@ -121,7 +122,7 @@ router.put("/sessions/:id/records", async (req, res) => {
   }
 });
 
-router.patch("/sessions/:id", async (req, res) => {
+router.patch("/sessions/:id", requireRole("Faculty", "Admin"), async (req, res) => {
   try {
     const { status } = req.body;
     if (!["Draft","Open","Closed"].includes(status)) return res.status(400).json({ success: false, message: "Invalid status" });
@@ -136,7 +137,7 @@ router.patch("/sessions/:id", async (req, res) => {
   }
 });
 
-router.get("/summary", async (req, res) => {
+router.get("/summary", requireRole("Faculty", "Admin"), async (req, res) => {
   try {
     const { month, class_name } = req.query;
     const params = [];
