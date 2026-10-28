@@ -132,6 +132,33 @@ async function createSqliteFallback() {
     );
   `);
 
+  db.run(`
+    CREATE TABLE IF NOT EXISTS attendance_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_code TEXT UNIQUE,
+      faculty_user_id INTEGER NOT NULL,
+      subject TEXT NOT NULL,
+      class_name TEXT NOT NULL,
+      session_date TEXT NOT NULL,
+      start_time TEXT NULL,
+      end_time TEXT NULL,
+      room_number TEXT NULL,
+      status TEXT NOT NULL DEFAULT 'Open',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  db.run(`
+    CREATE TABLE IF NOT EXISTS attendance_records (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL,
+      student_id INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'Present',
+      marked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE (session_id, student_id)
+    );
+  `);
+
   /* Account-specific profile data (avatar, cover photo, editable details).
      Shared DDL works on both SQLite and MySQL (TEXT-affinity MEDIUMTEXT). */
   db.run(`
