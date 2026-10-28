@@ -35,6 +35,7 @@ const GROUP_LABELS: Record<string, string> = {
 const STUDENT_ITEMS: DrawerItem[] = [
   { route: "Dashboard", label: "Overview", icon: LayoutDashboard, roles: ["Student"], group: "overview" },
   { route: "Profile", label: "My Profile", icon: UserCircle, roles: ["Student"], group: "profile" },
+{ route: "My Attendance", label: "My Attendance", icon: Calendar, roles: ["Student"], group: "profile" },
   { route: "Rooms", label: "My Room", icon: BedDouble, roles: ["Student"], group: "accommodation" },
   { route: "Water & Electricity", label: "Water & Electricity", icon: Zap, roles: ["Student"], group: "accommodation" },
   { route: "Housekeeping", label: "Housekeeping", icon: MapPin, roles: ["Student"], group: "accommodation" },
@@ -73,12 +74,14 @@ const ADMIN_ITEMS: DrawerItem[] = [
   { route: "Notices", label: "Notices & Announcements", icon: Bell, roles: ["Admin"], group: "communication" },
   { route: "Chat", label: "Student Chat", icon: MessageCircle, roles: ["Admin"], group: "communication" },
   { route: "Medical Facilities", label: "Medical & Emergency Contacts", icon: Phone, roles: ["Admin"], group: "safety" },
+{ route: "Hostel Entry/Exit", label: "Hostel Entry/Exit", icon: ShieldAlert, roles: ["Admin"], group: "safety" },
   { route: "Reports", label: "Reports & Analytics", icon: BarChart3, roles: ["Admin"], group: "reports" },
   { route: "Settings", label: "Settings", icon: Settings, roles: ["Admin"], group: "settings" },
 ];
 
 const FACULTY_ITEMS: DrawerItem[] = [
   { route: "Dashboard", label: "Faculty Overview", icon: LayoutDashboard, roles: ["Faculty"], group: "overview" },
+  { route: "Attendance", label: "Class Attendance", icon: Calendar, roles: ["Faculty"], group: "records" },
   { route: "Students", label: "Student Directory", icon: Users, roles: ["Faculty"], group: "records" },
   { route: "Rooms", label: "Room Management", icon: BedDouble, roles: ["Faculty"], group: "accommodation" },
   { route: "Faculty Rooms", label: "Faculty Rooms", icon: BedDouble, roles: ["Faculty"], group: "accommodation" },

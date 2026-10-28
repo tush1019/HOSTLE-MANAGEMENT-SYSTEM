@@ -51,6 +51,7 @@ const facultyRoutes = require("./faculty");
 const facultyRoomRoutes = require("./faculty_rooms");
 const staffRoutes = require("./staff");
 const chatRoutes = require("./chat");
+const hostelEntryExitRoutes = require("./hostel_entry_exit");
 
 const app = express();
 
@@ -165,6 +166,7 @@ app.use("/api/faculty", facultyRoutes);
 app.use("/api/faculty-rooms", facultyRoomRoutes);
 app.use("/api/staff", staffRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/hostel-gate-logs", hostelEntryExitRoutes);
 
 // 404 for unknown API routes
 app.use("/api", (req, res) => {

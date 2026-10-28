@@ -36,7 +36,9 @@ import LeaveManagement from "./pages/LeaveManagement";
 import MessPhotos from "./pages/MessPhotos";
 import GymPhotos from "./pages/GymPhotos";
 import RoomIssuePhotos from "./pages/RoomIssuePhotos";
+import HostelEntryExit from "./pages/HostelEntryExit";
 import StudentProfile from "./pages/StudentProfile";
+import StudentAttendance from "./pages/StudentAttendance";
 
 type Role = "Admin" | "Student" | "Faculty" | null;
 type PublicPage = "Home" | "Login" | "Signup";
@@ -45,6 +47,7 @@ const ADMIN_ONLY_ROUTES = new Set([
   "Students", "Staff", "Rooms", "Fees", "Reports", "Settings", "Campus Gallery", "Faculty Rooms",
   "Leave Management", "Maintenance Request", "Mess", "Housekeeping",
   "Water & Electricity", "Notices", "Medical Facilities", "Study Room",
+  "Hostel Entry/Exit",
 ]);
 const STUDENT_ROUTES = new Set([
   "Dashboard", "Profile", "Rooms", "Water & Electricity", "Housekeeping",
@@ -178,6 +181,7 @@ function App() {
         <Navbar activePage={activePage} onSearch={handleSearch} onNavigate={goPage} />
         {activePage === "Dashboard" && <Dashboard role={role! as any} onNavigate={goPage} />}
         {activePage === "Profile" && <StudentProfile />}
+{activePage === "My Attendance" && <StudentAttendance role={role} />}
         {activePage === "Students" && <Students search={globalSearch} role={role as any} />}
 {activePage === "Staff" && <Staff search={globalSearch} role={role as any} />}
 {activePage === "Chat" && <Chat />}
@@ -205,6 +209,7 @@ function App() {
         {activePage === "Mess Photos" && <MessPhotos role={role! as any} />}
         {activePage === "Gym Photos" && <GymPhotos role={role as any} />}
         {activePage === "Room Issue Photos" && <RoomIssuePhotos />}
+{activePage === "Hostel Entry/Exit" && <HostelEntryExit role={role} />}
       </main>
     </div>
   );

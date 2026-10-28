@@ -164,5 +164,26 @@ router.get("/summary", async (req, res) => {
   }
 });
 
+
+// Student self-service: own attendance records (read-only)
+router.get("/mine", requireRole("Student"), async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT ar.id, ar.session_id AS sessionId, ar.status, ar.marked_at AS markedAt,
+              sess.subject, sess.class_name AS className, sess.session_date AS sessionDate
+       FROM attendance_records ar
+       JOIN attendance_sessions sess ON sess.id = ar.session_id
+       JOIN students st ON st.id = ar.student_id
+       WHERE LOWER(st.email) = LOWER(?)
+       ORDER BY sess.session_date DESC, ar.id DESC LIMIT 200`,
+      [req.user.email]
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error("Student attendance error:", error);
+    res.status(500).json({ success: false, message: "Failed to load attendance" });
+  }
+});
+
 module.exports = router;
 
