@@ -45,7 +45,7 @@ function Dashboard({ role, onNavigate }: { role: "Admin" | "Student" | "Faculty"
     try { setD(await api<D>("/dashboard")); }
     catch (e) { setErr(e instanceof Error ? e.message : "Failed"); }
   };
-  useEffect(() => { if (role !== "Faculty") load(); }, []);
+  useEffect(() => { if (role === "Admin") load(); }, []);
 
   /* Student pending tasks — own leave applications + open maintenance reports. */
   useEffect(() => {
@@ -144,6 +144,40 @@ function Dashboard({ role, onNavigate }: { role: "Admin" | "Student" | "Faculty"
             ))}
           </div>
         ) : null}
+      </section>
+    );
+  }
+  if (role === "Student") {
+    const user = getStoredUser();
+    return (
+      <section className="content premium-page premium-dashboard">
+        <div className="page-heading admin-heading">
+          <div>
+            <span className="admin-eyebrow">Student Panel</span>
+            <h2>Welcome, {user?.name || "Student"}</h2>
+            <p>Your personal hostel overview.</p>
+          </div>
+        </div>
+        <div className="dashboard-grid">
+          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("My Attendance")}>
+            <h3>My Attendance</h3><p>View your attendance history and percentage.</p>
+          </div>
+          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Rooms")}>
+            <h3>My Room</h3><p>View your room details.</p>
+          </div>
+          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Leave Management")}>
+            <h3>Leave Applications</h3><p>Apply and track your leave requests.</p>
+          </div>
+          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Complaints")}>
+            <h3>Complaints</h3><p>Submit and track complaints.</p>
+          </div>
+          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Maintenance Request")}>
+            <h3>Maintenance</h3><p>Report maintenance issues.</p>
+          </div>
+          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Notices")}>
+            <h3>Notices</h3><p>Read hostel announcements.</p>
+          </div>
+        </div>
       </section>
     );
   }
