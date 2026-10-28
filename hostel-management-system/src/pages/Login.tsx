@@ -80,10 +80,25 @@ function Login({ onLogin, onSignup, onHome }: LoginProps) {
         }
       );
 
-      const data = await response.json();
+      const rawText = await response.text();
+      let data: any = null;
+      if (rawText.trim()) {
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          setError(`Server returned an invalid response (${response.status}).`);
+          setLoading(false);
+          return;
+        }
+      }
 
-      if (!data.success) {
-        setError(data.message || "Login failed.");
+      if (!response.ok) {
+        setError(data?.message || `Request failed (${response.status}).`);
+        setLoading(false);
+        return;
+      }
+      if (!data || data.success === false) {
+        setError(data?.message || "Login failed.");
         setLoading(false);
         return;
       }
