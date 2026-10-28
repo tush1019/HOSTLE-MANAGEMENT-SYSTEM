@@ -1,10 +1,12 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+router.use(authMiddleware);
 
 /* GET /api/dashboard — live counts for the dashboard & reports pages */
-router.get("/", async (req, res) => {
+router.get("/", requireRole("Admin"), async (req, res) => {
   try {
     const [studentsRows] = await db.query(`
       SELECT COUNT(*) AS total,

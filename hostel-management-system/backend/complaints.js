@@ -1,15 +1,29 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+const adminOnly = [authMiddleware, requireRole("Admin")];
+async function resolveStudentName(req) {
+  try {
+    const [rows] = await db.query(
+      `SELECT name FROM students WHERE LOWER(email) = LOWER(?) LIMIT 1`,
+      [req.user.email]
+    );
+    if (rows && rows.length) return rows[0].name;
+  } catch (e) {}
+  return req.user.email || req.user.name || "Unknown";
+}
+
 
 const VALID_PRIORITY = ["Low", "Medium", "High"];
 const VALID_STATUS = ["Pending", "In Progress", "Resolved"];
 
 /* GET /api/complaints?search= */
-router.get("/", async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
   try {
     const search = (req.query.search || "").trim();
+    const isAdmin = req.user.role === "Admin";
 
     let sql = `SELECT id, complaint_code AS complaintCode, student_name AS student,
                  room_number AS room, subject, description,
@@ -17,26 +31,34 @@ router.get("/", async (req, res) => {
                  priority, status, created_at AS createdAt
                FROM complaints`;
     const params = [];
+    const where = [];
 
+    if (!isAdmin) {
+      const name = await resolveStudentName(req);
+      where.push("student_name = ?");
+      params.push(name);
+    }
     if (search) {
-      sql += ` WHERE student_name LIKE ? OR complaint_code LIKE ? OR subject LIKE ? OR room_number LIKE ?`;
+      where.push(`(student_name LIKE ? OR complaint_code LIKE ? OR subject LIKE ? OR room_number LIKE ?)`);
       const like = `%${search}%`;
       params.push(like, like, like, like);
     }
-
+    if (where.length) sql += ` WHERE ` + where.join(" AND ");
     sql += ` ORDER BY created_at DESC LIMIT 500`;
 
     const [rows] = await db.query(sql, params);
 
-    const [summaryRows] = await db.query(`
-      SELECT
-        COUNT(*) AS total,
-        COALESCE(SUM(status = 'Pending'), 0) AS pending,
-        COALESCE(SUM(status = 'In Progress'), 0) AS inProgress,
-        COALESCE(SUM(status = 'Resolved'), 0) AS resolved
-      FROM complaints
-    `);
-    const summary = summaryRows[0] || {};
+    let summary = {};
+    if (isAdmin) {
+      const [summaryRows] = await db.query(`
+        SELECT COUNT(*) AS total,
+               COALESCE(SUM(status = 'Pending'), 0) AS pending,
+               COALESCE(SUM(status = 'In Progress'), 0) AS inProgress,
+               COALESCE(SUM(status = 'Resolved'), 0) AS resolved
+        FROM complaints
+      `);
+      summary = summaryRows[0] || {};
+    }
 
     res.json({ success: true, data: rows, summary });
   } catch (error) {
@@ -46,11 +68,16 @@ router.get("/", async (req, res) => {
 });
 
 /* POST /api/complaints */
-router.post("/", async (req, res) => {
+router.post("/", authMiddleware, async (req, res) => {
   try {
     const { student, room, subject, description, priority, status } = req.body;
 
-    if (!student || !student.trim()) {
+    const isAdmin = req.user.role === "Admin";
+    const studentName = isAdmin
+      ? (student && student.trim() ? student.trim() : (await resolveStudentName(req)))
+      : await resolveStudentName(req);
+
+    if (!studentName) {
       return res.status(400).json({ success: false, message: "Student name is required" });
     }
     if (!subject || !subject.trim()) {
@@ -64,7 +91,7 @@ router.post("/", async (req, res) => {
       `INSERT INTO complaints (student_name, room_number, subject, description, complaint_date, priority, status)
        VALUES (?, ?, ?, ?, CURDATE(), ?, ?)`,
       [
-        student.trim(),
+        studentName,
         room ? room.trim() : null,
         subject.trim(),
         description ? description.trim() : null,
@@ -92,7 +119,7 @@ router.post("/", async (req, res) => {
 });
 
 /* PATCH /api/complaints/:id/status  { status } */
-router.patch("/:id/status", async (req, res) => {
+router.patch("/:id/status", adminOnly, async (req, res) => {
   try {
     const { status } = req.body;
 
@@ -116,8 +143,51 @@ router.patch("/:id/status", async (req, res) => {
   }
 });
 
+/* PUT /api/complaints/:id  (full update) */
+router.put("/:id", adminOnly, async (req, res) => {
+  try {
+    const { student, room, subject, description, priority, status } = req.body;
+
+    if (!student || !student.trim()) {
+      return res.status(400).json({ success: false, message: "Student name is required" });
+    }
+    if (!subject || !subject.trim()) {
+      return res.status(400).json({ success: false, message: "Subject is required" });
+    }
+
+    const prio = VALID_PRIORITY.includes(priority) ? priority : "Medium";
+    const compStatus = VALID_STATUS.includes(status) ? status : "Pending";
+
+    const [result] = await db.query(
+      `UPDATE complaints
+       SET student_name = ?, room_number = ?, subject = ?, description = ?,
+           priority = ?, status = ?
+       WHERE id = ?`,
+      [
+        student.trim(),
+        room ? room.trim() : null,
+        subject.trim(),
+        description ? description.trim() : null,
+        prio,
+        compStatus,
+        req.params.id,
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: "Complaint not found" });
+    }
+
+    res.json({ success: true, message: "Complaint updated" });
+  } catch (error) {
+    console.error("Complaint update error:", error);
+    res.status(500).json({ success: false, message: "Failed to update complaint" });
+  }
+});
+
+
 /* DELETE /api/complaints/:id */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", adminOnly, async (req, res) => {
   try {
     const [result] = await db.query(`DELETE FROM complaints WHERE id = ?`, [req.params.id]);
 

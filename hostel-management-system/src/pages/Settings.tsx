@@ -35,7 +35,7 @@ function Settings() {
   };
 
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading settings-heading">
         <div>
           <h2>Settings</h2>
@@ -132,3 +132,4 @@ function Settings() {
 }
 
 export default Settings;
+

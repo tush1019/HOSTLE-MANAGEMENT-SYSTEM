@@ -1,7 +1,9 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+router.use(authMiddleware);
 
 async function getUserById(id) {
   const [rows] = await db.query(`SELECT id, name, email, role FROM users WHERE id = ? LIMIT 1`, [id]);
@@ -9,14 +11,12 @@ async function getUserById(id) {
 }
 
 async function requireUser(req, res) {
-  const userId = req.headers["x-user-id"] ? parseInt(req.headers["x-user-id"], 10) : NaN;
-  const email = req.headers["x-user-email"] ? String(req.headers["x-user-email"]).trim() : "";
-  if (!Number.isFinite(userId)) {
+  if (!req.user || !req.user.id) {
     res.status(401).json({ success: false, message: "Authentication required" });
     return null;
   }
-  const user = await getUserById(userId);
-  if (!user || (email && String(user.email).toLowerCase() !== email.toLowerCase())) {
+  const user = await getUserById(req.user.id);
+  if (!user || (req.user.email && String(user.email).toLowerCase() !== String(req.user.email).toLowerCase())) {
     res.status(401).json({ success: false, message: "Invalid session" });
     return null;
   }
@@ -26,8 +26,8 @@ async function requireUser(req, res) {
 function canMessage(sender, recipient) {
   if (!sender || !recipient) return false;
   if (sender.id === recipient.id) return false;
-  if (sender.role === "Admin" && recipient.role === "Student") return true;
-  if (sender.role === "Student" && recipient.role === "Admin") return true;
+  if (sender.role === "Admin" && (recipient.role === "Student" || recipient.role === "Faculty")) return true;
+  if ((sender.role === "Student" || sender.role === "Faculty") && recipient.role === "Admin") return true;
   return false;
 }
 

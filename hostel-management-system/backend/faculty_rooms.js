@@ -1,7 +1,9 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+router.use(authMiddleware);
 
 async function ensureTable() {
   await db.query(`CREATE TABLE IF NOT EXISTS faculty_room_assignments (
@@ -16,9 +18,15 @@ async function ensureTable() {
 }
 
 /* GET /api/faculty-rooms */
-router.get("/", async (req, res) => {
+router.get("/", requireRole("Admin", "Faculty"), async (req, res) => {
   try {
     await ensureTable();
+    if (req.user.role === "Faculty") {
+      const email = req.user.email;
+      if (!email) return res.json({ success: true, data: [] });
+      const [rows] = await db.query(`SELECT * FROM faculty_room_assignments WHERE faculty_email = ? ORDER BY assigned_at DESC`, [email]);
+      return res.json({ success: true, data: rows });
+    }
     const [rows] = await db.query(`SELECT * FROM faculty_room_assignments ORDER BY assigned_at DESC`);
     res.json({ success: true, data: rows });
   } catch (error) {
@@ -28,7 +36,7 @@ router.get("/", async (req, res) => {
 });
 
 /* POST /api/faculty-rooms */
-router.post("/", async (req, res) => {
+router.post("/", requireRole("Admin"), async (req, res) => {
   try {
     await ensureTable();
     const { facultyName, facultyEmail, roomId, roomNumber, wing } = req.body;
@@ -47,7 +55,7 @@ router.post("/", async (req, res) => {
 });
 
 /* DELETE /api/faculty-rooms/:id */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireRole("Admin"), async (req, res) => {
   try {
     await ensureTable();
     const [result] = await db.query(`DELETE FROM faculty_room_assignments WHERE id = ?`, [req.params.id]);

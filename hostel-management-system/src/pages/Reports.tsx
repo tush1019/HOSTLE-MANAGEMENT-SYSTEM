@@ -28,7 +28,7 @@ function Reports() {
 
   if (err) {
     return (
-      <section className="content">
+      <section className="content premium-page">
         <div className="error-state">{err}
           <button type="button" onClick={load}>Retry</button>
         </div>
@@ -38,7 +38,7 @@ function Reports() {
 
   if (!d) {
     return (
-      <section className="content">
+      <section className="content premium-page">
         <div className="skeleton-card">
           <div className="skeleton-line" style={{ width: "40%" }} />
           <div className="skeleton-line" style={{ width: "70%" }} />
@@ -54,7 +54,7 @@ function Reports() {
     : 0;
 
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading reports-heading">
         <div>
           <h2>Reports</h2>
@@ -125,3 +125,4 @@ function Reports() {
 }
 
 export default Reports;
+

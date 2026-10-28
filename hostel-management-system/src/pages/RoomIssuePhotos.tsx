@@ -74,7 +74,7 @@ function RoomIssuePhotos() {
     : rows;
 
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading roomissue-heading">
         <div>
           <Wrench size={24} className="page-heading-icon" />

@@ -1,7 +1,9 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+router.use(authMiddleware);
 
 const VALID_STATUS = ["Active", "Maintenance"];
 
@@ -20,7 +22,7 @@ router.get("/photos", async (req, res) => {
 });
 
 /* POST /api/gym/photos */
-router.post("/photos", async (req, res) => {
+router.post("/photos", requireRole("Admin"), async (req, res) => {
   try {
     const { title, photo, description, equipmentType, status } = req.body;
     if (!title || !title.trim()) {
@@ -39,6 +41,20 @@ router.post("/photos", async (req, res) => {
   } catch (error) {
     console.error("Gym photo create error:", error);
     res.status(500).json({ success: false, message: "Failed to add gym photo" });
+  }
+});
+
+/* DELETE /api/gym/photos/:id */
+router.delete("/photos/:id", requireRole("Admin"), async (req, res) => {
+  try {
+    const [result] = await db.query(`DELETE FROM gym_photos WHERE id = ?`, [req.params.id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: "Photo not found" });
+    }
+    res.json({ success: true, message: "Photo removed" });
+  } catch (error) {
+    console.error("Gym photo delete error:", error);
+    res.status(500).json({ success: false, message: "Failed to remove photo" });
   }
 });
 

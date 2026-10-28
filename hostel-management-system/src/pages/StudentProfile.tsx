@@ -8,6 +8,7 @@ import { formatINR } from "../lib/format";
 import { useToast } from "../components/Toast";
 import Modal from "../components/Modal";
 import { compressImage } from "../lib/images";
+import "../student-profile-premium.css";
 
 type Profile = {
   userId: number;
@@ -190,7 +191,7 @@ function StudentProfile() {
 
   if (!user) {
     return (
-      <section className="content">
+      <section className="content premium-page">
         <div className="error-state">
           <strong>You are not signed in</strong>
           <p>Sign in again to view and edit your profile.</p>
@@ -202,7 +203,7 @@ function StudentProfile() {
 
   if (loading) {
     return (
-      <section className="content">
+      <section className="content premium-page">
         <div className="skeleton-card">
           <div className="skeleton-line" style={{ width: "45%" }} />
           <div className="skeleton-line" style={{ width: "75%" }} />
@@ -214,7 +215,7 @@ function StudentProfile() {
 
   if (err) {
     return (
-      <section className="content">
+      <section className="content premium-page">
         <div className="error-state">
           {err}
           <button type="button" onClick={() => void load()}>Retry</button>
@@ -241,7 +242,7 @@ function StudentProfile() {
   }
 
   return (
-    <section className="content sp-page">
+    <section className="content premium-page sp-page sp-premium">
       <div className="sp-header">
         <div className={`sp-cover${cover ? "" : " sp-cover-empty"}`}>
           {cover ? (

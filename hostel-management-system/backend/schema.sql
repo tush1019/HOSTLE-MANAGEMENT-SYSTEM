@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(100) NOT NULL,
   email VARCHAR(150) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
-  role ENUM('Admin', 'Student') NOT NULL DEFAULT 'Student',
+  role ENUM('Admin', 'Student', 'Faculty') NOT NULL DEFAULT 'Student',
   email_verified TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS otp_verifications (
   otp_hash VARCHAR(255) NOT NULL,
   name VARCHAR(100) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
-  role ENUM('Admin', 'Student') NOT NULL DEFAULT 'Student',
+  role ENUM('Admin', 'Student', 'Faculty') NOT NULL DEFAULT 'Student',
   attempts TINYINT NOT NULL DEFAULT 0,
   resend_count TINYINT NOT NULL DEFAULT 1,
   last_sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -378,3 +378,70 @@ SELECT * FROM (
 ) AS seed
 WHERE NOT EXISTS (SELECT 1 FROM hostel_services LIMIT 1);
 WHERE NOT EXISTS (SELECT 1 FROM notices LIMIT 1);
+-- Faculty attendance sessions
+CREATE TABLE IF NOT EXISTS attendance_sessions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  session_code VARCHAR(20) UNIQUE,
+  faculty_user_id INT NOT NULL,
+  subject VARCHAR(100) NOT NULL,
+  class_name VARCHAR(100) NOT NULL,
+  session_date DATE NOT NULL,
+  start_time VARCHAR(10) NULL,
+  end_time VARCHAR(10) NULL,
+  room_number VARCHAR(20) NULL,
+  status TEXT NOT NULL DEFAULT 'Open',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_attendance_session (faculty_user_id, subject, class_name, session_date, start_time)
+);
+
+-- Faculty attendance records
+CREATE TABLE IF NOT EXISTS attendance_records (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  session_id INT NOT NULL,
+  student_id INT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'Present',
+  marked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_attendance_record (session_id, student_id)
+);
+
+-- Faculty assignments
+CREATE TABLE IF NOT EXISTS assignments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  assignment_code VARCHAR(20) UNIQUE,
+  faculty_user_id INT NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  instructions TEXT NULL,
+  subject VARCHAR(100) NOT NULL,
+  class_name VARCHAR(100) NOT NULL,
+  deadline DATETIME NOT NULL,
+  status TEXT NOT NULL DEFAULT 'Draft',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Assignment submissions / marks
+CREATE TABLE IF NOT EXISTS assignment_submissions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  assignment_id INT NOT NULL,
+  student_id INT NOT NULL,
+  submitted_at TIMESTAMP NULL,
+  marks REAL NULL,
+  feedback TEXT NULL,
+  status TEXT NOT NULL DEFAULT 'Not Submitted',
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_assignment_submission (assignment_id, student_id)
+);
+
+-- Faculty timetable entries
+CREATE TABLE IF NOT EXISTS timetable_entries (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  faculty_user_id INT NOT NULL,
+  subject VARCHAR(100) NOT NULL,
+  class_name VARCHAR(100) NOT NULL,
+  day_of_week VARCHAR(15) NOT NULL,
+  start_time VARCHAR(10) NOT NULL,
+  end_time VARCHAR(10) NOT NULL,
+  room_number VARCHAR(20) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

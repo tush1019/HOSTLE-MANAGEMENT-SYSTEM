@@ -574,6 +574,74 @@ async function ensureChatMessagesTable(pool) {
   }
 }
 /* Ensure Faculty is allowed in users.role and otp_verifications.role (MySQL, safe to re-run). */
+/* Faculty attendance/assignment/timetable tables (MySQL, safe to re-run). */
+async function ensureFacultyTables(pool) {
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS attendance_sessions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      session_code VARCHAR(20) UNIQUE,
+      faculty_user_id INT NOT NULL,
+      subject VARCHAR(100) NOT NULL,
+      class_name VARCHAR(100) NOT NULL,
+      session_date DATE NOT NULL,
+      start_time VARCHAR(10) NULL,
+      end_time VARCHAR(10) NULL,
+      room_number VARCHAR(20) NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'Open',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS attendance_records (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      session_id INT NOT NULL,
+      student_id INT NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'Present',
+      marked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_attendance_record (session_id, student_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS assignments (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      assignment_code VARCHAR(20) UNIQUE,
+      faculty_user_id INT NOT NULL,
+      title VARCHAR(200) NOT NULL,
+      instructions TEXT NULL,
+      subject VARCHAR(100) NOT NULL,
+      class_name VARCHAR(100) NOT NULL,
+      deadline DATETIME NOT NULL,
+      status VARCHAR(20) NOT NULL DEFAULT 'Draft',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS assignment_submissions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      assignment_id INT NOT NULL,
+      student_id INT NOT NULL,
+      submitted_at TIMESTAMP NULL,
+      marks DECIMAL(6,2) NULL,
+      feedback TEXT NULL,
+      status VARCHAR(30) NOT NULL DEFAULT 'Not Submitted',
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_assignment_submission (assignment_id, student_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS timetable_entries (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      faculty_user_id INT NOT NULL,
+      subject VARCHAR(100) NOT NULL,
+      class_name VARCHAR(100) NOT NULL,
+      day_of_week VARCHAR(15) NOT NULL,
+      start_time VARCHAR(10) NOT NULL,
+      end_time VARCHAR(10) NOT NULL,
+      room_number VARCHAR(20) NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`,
+  ];
+  for (const sql of statements) {
+    try { await pool.query(sql); } catch (error) { console.warn("faculty table migration skipped:", error.message); }
+  }
+  console.log("[db] Verified faculty tables");
+}
+
+
 async function ensureFacultyRoleEnum(pool) {
   try {
     await pool.query("ALTER TABLE users MODIFY COLUMN role ENUM('Admin', 'Student', 'Faculty') NOT NULL DEFAULT 'Student'");
@@ -609,6 +677,7 @@ async function getPool() {
     await ensureUserPreferencesTable(mysqlPool);
     await ensureStaffTable(mysqlPool);
     await ensureChatMessagesTable(mysqlPool);
+    await ensureFacultyTables(mysqlPool);
     await ensureFacultyRoleEnum(mysqlPool);
     console.log("[db] MySQL pool connected successfully");
     return mysqlPool;

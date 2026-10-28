@@ -1,18 +1,24 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+router.use(authMiddleware);
 
 /* GET /api/notices */
 router.get("/", async (req, res) => {
   try {
-    const [rows] = await db.query(
-      `SELECT id, title, message, audience,
-              DATE_FORMAT(created_at, '%d %b %Y') AS date,
-              created_at AS createdAt
-       FROM notices ORDER BY created_at DESC LIMIT 50`
-    );
-
+    const isAdmin = req.user.role === "Admin";
+    let sql = `SELECT id, title, message, audience,
+            DATE_FORMAT(created_at, '%d %b %Y') AS date,
+            created_at AS createdAt
+     FROM notices`;
+    const params = [];
+    if (!isAdmin) {
+      sql += ` WHERE audience IN ('All', 'Students')`;
+    }
+    sql += ` ORDER BY created_at DESC LIMIT 50`;
+    const [rows] = await db.query(sql, params);
     res.json({ success: true, data: rows });
   } catch (error) {
     console.error("Notices list error:", error);
@@ -21,7 +27,7 @@ router.get("/", async (req, res) => {
 });
 
 /* POST /api/notices */
-router.post("/", async (req, res) => {
+router.post("/", requireRole("Admin"), async (req, res) => {
   try {
     const { title, message, audience } = req.body;
 
@@ -54,7 +60,7 @@ router.post("/", async (req, res) => {
 });
 
 /* DELETE /api/notices/:id */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireRole("Admin"), async (req, res) => {
   try {
     const [result] = await db.query(`DELETE FROM notices WHERE id = ?`, [req.params.id]);
 

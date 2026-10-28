@@ -1,7 +1,9 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+router.use(authMiddleware);
 
 const ALLOWED_STATUSES = ["Active", "Inactive", "On Leave"];
 const ALLOWED_ROLES = ["Staff", "Faculty", "Warden", "Maintenance", "Housekeeping", "Admin Support"];
@@ -14,17 +16,12 @@ function isAdminUser(userId, email) {
 }
 
 function getUserIdEmail(req) {
-  const userId = req.headers["x-user-id"]
-    ? parseInt(req.headers["x-user-id"], 10)
-    : req.body && req.body.userId ? parseInt(req.body.userId, 10) : NaN;
-  const email = req.headers["x-user-email"]
-    ? String(req.headers["x-user-email"]).trim()
-    : String((req.body && req.body.email) || "").trim();
-  return { userId, email };
+  return { userId: req.user.id, email: req.user.email };
 }
 
 async function requireAdmin(req, res) {
-  const { userId, email } = getUserIdEmail(req);
+  const userId = req.user.id;
+  const email = req.user.email;
   if (!Number.isFinite(userId) || !(await isAdminUser(userId, email))) {
     res.status(403).json({ success: false, message: "Administrator access required" });
     return null;

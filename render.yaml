@@ -3,7 +3,7 @@ services:
     name: hostle-management-system
     env: node
     plan: free
-    buildCommand: cd hostel-management-system && npm install && npm run build && cd backend && npm install
+    buildCommand: cd hostel-management-system && npm install --include=dev && npm run build && cd backend && npm install
     startCommand: cd hostel-management-system/backend && node server.js
     envVars:
       - key: NODE_ENV

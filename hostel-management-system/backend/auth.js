@@ -10,6 +10,12 @@ const { signToken, authMiddleware, requireRole } = require("./middleware/auth");
 const ADMIN_PASSKEY = process.env.ADMIN_PASSKEY || "484951";
 const FACULTY_SIGNUP_KEY = process.env.FACULTY_SIGNUP_KEY;
 
+// Demo OTP is only for local development/demo. It must never be enabled in
+// production, where OTPs must only be delivered by the configured provider.
+function isDemoOtpEnabled() {
+  return process.env.DEMO_OTP_ENABLED === "true" && process.env.NODE_ENV !== "production";
+}
+
 const router = express.Router();
 
 /* Stricter rate limit for auth endpoints: 20 requests / 15 min per IP. */
@@ -211,7 +217,7 @@ router.post("/register", authRateLimit, async (req, res) => {
     );
 
     let emailSent = false;
-    let devOtp = null;
+    let demoOtp = null;
     try {
       if (isEmailConfigured()) {
         await sendOtpEmail(cleanEmail, otp, cleanName);
@@ -221,13 +227,13 @@ router.post("/register", authRateLimit, async (req, res) => {
       console.error("OTP send failed:", sendErr.message);
     }
 
-    // Show a demo OTP when explicitly enabled (for demos/testing) or in
-    // non-production when email delivery is unavailable.
-    if (
-      process.env.ALLOW_DEV_OTP === "true" ||
-      (process.env.NODE_ENV !== "production" && !emailSent)
-    ) {
-      devOtp = otp;
+    // Demo OTP is returned only in non-production demo mode. In production,
+    // or when demo mode is disabled, no OTP is exposed in the response.
+    if (isDemoOtpEnabled()) {
+      demoOtp = otp;
+    } else if (process.env.NODE_ENV !== "production" && !emailSent) {
+      // Backward-compatible local fallback when no email provider exists.
+      demoOtp = otp;
     }
 
     res.status(200).json({
@@ -235,7 +241,7 @@ router.post("/register", authRateLimit, async (req, res) => {
       message: emailSent ? "Verification code sent to your email." : "Verification code generated (dev mode).",
       email: cleanEmail,
       role: userRole,
-      ...(devOtp ? { devOtp } : {}),
+      ...(demoOtp ? { demoOtp, devOtp: demoOtp } : {}),
     });
   } catch (error) {
     console.error("Register Error:", error.message);
@@ -282,7 +288,7 @@ router.post("/resend-otp", authRateLimit, async (req, res) => {
     );
 
     let emailSent = false;
-    let devOtp = null;
+    let demoOtp = null;
     try {
       if (isEmailConfigured()) {
         const [nameRow] = await db.query("SELECT name FROM otp_verifications WHERE email = ? LIMIT 1", [cleanEmail]);
@@ -293,17 +299,16 @@ router.post("/resend-otp", authRateLimit, async (req, res) => {
       console.error("OTP resend failed:", sendErr.message);
     }
 
-    if (
-      process.env.ALLOW_DEV_OTP === "true" ||
-      (process.env.NODE_ENV !== "production" && !emailSent)
-    ) {
-      devOtp = otp;
+    if (isDemoOtpEnabled()) {
+      demoOtp = otp;
+    } else if (process.env.NODE_ENV !== "production" && !emailSent) {
+      demoOtp = otp;
     }
 
     res.json({
       success: true,
       message: emailSent ? "A new verification code has been sent." : "New code generated (dev mode).",
-      ...(devOtp ? { devOtp } : {}),
+      ...(demoOtp ? { demoOtp, devOtp: demoOtp } : {}),
     });
   } catch (error) {
     console.error("Resend OTP Error:", error.message);

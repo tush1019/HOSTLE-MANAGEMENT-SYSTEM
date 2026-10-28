@@ -104,7 +104,7 @@ function Complaints({ search, role }: { search: string; role: "Admin" | "Student
         [c.student, c.complaintCode || "", c.subject, c.room || ""].join(" ").toLowerCase().includes(term))
     : rows;
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading complaints-heading">
         <div>
           <h2>Complaints</h2>
@@ -237,3 +237,4 @@ function Complaints({ search, role }: { search: string; role: "Admin" | "Student
 }
 
 export default Complaints;
+

@@ -1,11 +1,9 @@
 {
-  "dependencies": {
-    "lucide-react": "^1.45.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
-  },
-  "devDependencies": {
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0"
+  "name": "hostel-management-system-root",
+  "private": true,
+  "scripts": {
+    "dev": "cd hostel-management-system && npm run dev",
+    "build": "cd hostel-management-system && npm run build",
+    "start": "cd hostel-management-system/backend && node server.js"
   }
 }

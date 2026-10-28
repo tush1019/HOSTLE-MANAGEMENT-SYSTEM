@@ -9,6 +9,7 @@
    ============================================================ */
 const express = require("express");
 const db = require("./db");
+const { authMiddleware } = require("./middleware/auth");
 
 const router = express.Router();
 
@@ -37,7 +38,7 @@ async function verifyAccount(userId, email) {
 async function findProfile(userId, email) {
   const [rows] = await db.query(
     `SELECT ${PROFILE_SELECT} FROM user_profiles
-     WHERE user_id = ? OR LOWER(email) = LOWER(?) LIMIT 1`,
+     WHERE user_id = ? AND LOWER(email) = LOWER(?) LIMIT 1`,
     [userId, email]
   );
   return rows[0] || null;
@@ -54,19 +55,18 @@ async function ensureProfile(userId, email) {
   return findProfile(userId, email);
 }
 
-/* GET /api/profiles/me?userId=&email= */
-router.get("/me", async (req, res) => {
+/* GET /api/profiles/me */
+router.get("/me", authMiddleware, async (req, res) => {
   try {
-    const userId = parseInt(req.query.userId, 10);
-    const email = String(req.query.email || "").trim();
-    if (!Number.isFinite(userId) || !email) {
-      return res.status(400).json({ success: false, message: "userId and email are required" });
-    }
-    if (!(await verifyAccount(userId, email))) {
-      return res.status(403).json({ success: false, message: "Session does not match any account" });
-    }
+    const userId = req.user.id;
+    const email = req.user.email;
     const profile = await findProfile(userId, email);
-    res.json({ success: true, data: profile });
+    if (!profile) {
+      // ensure profile row exists
+      await ensureProfile(userId, email);
+    }
+    const updated = await findProfile(userId, email);
+    res.json({ success: true, data: updated });
   } catch (error) {
     console.error("Profile get error:", error);
     res.status(500).json({ success: false, message: "Failed to load profile" });
@@ -74,16 +74,10 @@ router.get("/me", async (req, res) => {
 });
 
 /* PUT /api/profiles/me/details — save editable profile details */
-router.put("/me/details", async (req, res) => {
+router.put("/me/details", authMiddleware, async (req, res) => {
   try {
-    const userId = parseInt(req.body.userId, 10);
-    const email = String(req.body.email || "").trim();
-    if (!Number.isFinite(userId) || !email) {
-      return res.status(400).json({ success: false, message: "userId and email are required" });
-    }
-    if (!(await verifyAccount(userId, email))) {
-      return res.status(403).json({ success: false, message: "Session does not match any account" });
-    }
+    const userId = req.user.id;
+    const email = req.user.email;
     const phone = cleanText(req.body.phone, 30);
     const bio = cleanText(req.body.bio, 800);
     const address = cleanText(req.body.address, 200);
@@ -106,16 +100,13 @@ router.put("/me/details", async (req, res) => {
 });
 
 /* PUT /api/profiles/me/photo  { kind: "avatar" | "cover", photo } */
-router.put("/me/photo", async (req, res) => {
+router.put("/me/photo", authMiddleware, async (req, res) => {
   try {
-    const userId = parseInt(req.body.userId, 10);
-    const email = String(req.body.email || "").trim();
+    const userId = req.user.id;
+    const email = req.user.email;
     const kind = String(req.body.kind || "");
     const photo = String(req.body.photo || "");
 
-    if (!Number.isFinite(userId) || !email) {
-      return res.status(400).json({ success: false, message: "userId and email are required" });
-    }
     if (!["avatar", "cover"].includes(kind)) {
       return res.status(400).json({ success: false, message: "kind must be avatar or cover" });
     }
@@ -128,9 +119,6 @@ router.put("/me/photo", async (req, res) => {
         success: false,
         message: kind === "avatar" ? "Profile photo is too large" : "Cover photo is too large",
       });
-    }
-    if (!(await verifyAccount(userId, email))) {
-      return res.status(403).json({ success: false, message: "Session does not match any account" });
     }
     const profile = await ensureProfile(userId, email);
     if (!profile) {
@@ -154,20 +142,14 @@ router.put("/me/photo", async (req, res) => {
 });
 
 /* DELETE /api/profiles/me/photo  { kind: "avatar" | "cover" } — remove a saved photo */
-router.delete("/me/photo", async (req, res) => {
+router.delete("/me/photo", authMiddleware, async (req, res) => {
   try {
-    const userId = parseInt(req.body.userId, 10);
-    const email = String(req.body.email || "").trim();
+    const userId = req.user.id;
+    const email = req.user.email;
     const kind = String(req.body.kind || "");
 
-    if (!Number.isFinite(userId) || !email) {
-      return res.status(400).json({ success: false, message: "userId and email are required" });
-    }
     if (!["avatar", "cover"].includes(kind)) {
       return res.status(400).json({ success: false, message: "kind must be avatar or cover" });
-    }
-    if (!(await verifyAccount(userId, email))) {
-      return res.status(403).json({ success: false, message: "Session does not match any account" });
     }
     const profile = await ensureProfile(userId, email);
     if (!profile) {

@@ -1,0 +1,14 @@
+/* Final visibility fixes - imported last */
+body, .main-content, .content { color: #1F2937 !important; }
+.sidebar, .sidebar * { color: #F9FAFB !important; }
+.sidebar .active, .sidebar .active * { color: #6366f1 !important; }
+.navbar, .navbar * { color: #1F2937 !important; }
+.navbar h1, .navbar h2, .navbar h3 { color: #101828 !important; }
+.dashboard-card, .dashboard-card * { color: #1F2937 !important; }
+.dashboard-card h1,.dashboard-card h2,.dashboard-card h3,.dashboard-card h4 { color: #101828 !important; }
+input, textarea, select { color: #1F2937 !important; background: #FFFFFF !important; }
+::placeholder { color: #6B7280 !important; opacity: 1 !important; }
+button { color: inherit; }
+.modal, .modal * { color: #1F2937 !important; }
+table, table * { color: #1F2937 !important; }
+a { color: #101828; }

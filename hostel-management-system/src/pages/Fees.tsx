@@ -108,7 +108,7 @@ function Fees({ search, role }: { search: string; role: "Admin" | "Student" | nu
   const totalCharges = roomTotal + electricityTotal + foodTotal + cleaningTotal + otherTotal;
 
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading fees-heading">
         <div>
           <h2>Fees &amp; Payments</h2>
@@ -294,3 +294,4 @@ function Fees({ search, role }: { search: string; role: "Admin" | "Student" | nu
 }
 
 export default Fees;
+

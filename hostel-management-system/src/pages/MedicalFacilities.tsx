@@ -1,7 +1,8 @@
 import ServiceList from "../components/ServiceList";
 
-function MedicalFacilities() {
-  return <ServiceList category="Medical Facilities" />;
+function MedicalFacilities({ role }: { role?: "Admin" | "Student" | null }) {
+  return <ServiceList category="Medical Facilities" role={role} />;
 }
 
 export default MedicalFacilities;
+

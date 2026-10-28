@@ -1,10 +1,14 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
 
+const adminOnly = [authMiddleware, requireRole("Admin")];
+const readAccess = [authMiddleware, requireRole("Admin", "Faculty")];
+
 /* GET /api/students?search= */
-router.get("/", async (req, res) => {
+router.get("/", readAccess, async (req, res) => {
   try {
     const search = (req.query.search || "").trim();
     const email = (req.query.email || "").trim();
@@ -36,7 +40,7 @@ router.get("/", async (req, res) => {
 });
 
 /* POST /api/students */
-router.post("/", async (req, res) => {
+router.post("/", adminOnly, async (req, res) => {
   try {
     const { name, email, phone, course, room, status } = req.body;
 
@@ -77,7 +81,7 @@ router.post("/", async (req, res) => {
 });
 
 /* PUT /api/students/:id */
-router.put("/:id", async (req, res) => {
+router.put("/:id", adminOnly, async (req, res) => {
   try {
     const { name, email, phone, course, room, status } = req.body;
 
@@ -121,7 +125,7 @@ router.put("/:id", async (req, res) => {
 });
 
 /* DELETE /api/students/:id */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", adminOnly, async (req, res) => {
   try {
     const [result] = await db.query(`DELETE FROM students WHERE id = ?`, [req.params.id]);
 

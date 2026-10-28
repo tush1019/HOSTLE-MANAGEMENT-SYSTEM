@@ -62,7 +62,7 @@ function Notices({ role }: { role: "Admin" | "Student" | null }) {
   );
 
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading">
         <div>
           <h2>Notice Board</h2>
@@ -132,3 +132,4 @@ function Notices({ role }: { role: "Admin" | "Student" | null }) {
 }
 
 export default Notices;
+

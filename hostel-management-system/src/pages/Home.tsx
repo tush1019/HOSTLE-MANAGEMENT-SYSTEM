@@ -94,7 +94,7 @@ function Home({ onLogin, onSignup }: HomeProps) {
   void setLive; void galleryItems; void galleryLoading; void galleryError;
 
   return (
-    <div className="public-home premium-home">
+    <div className="public-home premium-home" style={{ background: "#F5F7FA", minHeight: "100vh" }}>
 
       {/* PUBLIC NAVBAR */}
       <header

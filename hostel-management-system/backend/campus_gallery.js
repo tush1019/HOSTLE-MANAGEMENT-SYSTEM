@@ -6,8 +6,10 @@
    ============================================================ */
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+router.use(authMiddleware);
 
 const IMAGE_DATA_RE = /^data:image\/(?:png|jpe?g|webp|gif);base64,[A-Za-z0-9+/]+={0,2}$/;
 const MAX_IMAGE_CHARS = 400000;
@@ -89,7 +91,7 @@ router.get("/", async (req, res) => {
 });
 
 /* POST /api/campus-gallery — create item (admin) */
-router.post("/", async (req, res) => {
+router.post("/", requireRole("Admin"), async (req, res) => {
   try {
     const { userId, email } = getUserIdEmail(req);
     if (!Number.isFinite(userId) || !(await isAdminUser(userId, email))) {
@@ -139,7 +141,7 @@ router.post("/", async (req, res) => {
 });
 
 /* PUT /api/campus-gallery/:id — update item (admin) */
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireRole("Admin"), async (req, res) => {
   try {
     const { userId, email } = getUserIdEmail(req);
     if (!Number.isFinite(userId) || !(await isAdminUser(userId, email))) {
@@ -227,7 +229,7 @@ router.patch("/:id/publish", async (req, res) => {
 });
 
 /* DELETE /api/campus-gallery/:id — delete item (admin) */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireRole("Admin"), async (req, res) => {
   try {
     const { userId, email } = getUserIdEmail(req);
     if (!Number.isFinite(userId) || !(await isAdminUser(userId, email))) {

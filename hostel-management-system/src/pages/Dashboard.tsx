@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { api, getStoredUser } from "../lib/api";
 import { formatINR } from "../lib/format";
+import "../dashboard-premium.css";
 
 type D = {
   students: { total: number; active: number };
@@ -22,15 +23,29 @@ type LeaveRow = { leaveCode: string | null; startDate: string; endDate: string; 
 type MaintRow = { requestCode: string | null; title: string; status: string; priority: string };
 type TaskItem = { key: string; title: string; sub: string; status: string; page: string };
 
-function Dashboard({ role, onNavigate }: { role: "Admin" | "Student"; onNavigate: (page: string) => void }) {
+function Dashboard({ role, onNavigate }: { role: "Admin" | "Student" | "Faculty"; onNavigate: (page: string) => void }) {
   const [d, setD] = useState<D | null>(null);
   const [err, setErr] = useState("");
   const [tasks, setTasks] = useState<TaskItem[] | null>(null);
+  const [facultyData, setFacultyData] = useState<any>(null);
+  useEffect(() => {
+    if (role !== "Faculty") return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api<any>("/faculty/dashboard");
+        if (!cancelled) setFacultyData(data);
+      } catch {
+        if (!cancelled) setFacultyData(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [role]);
   const load = async () => {
     try { setD(await api<D>("/dashboard")); }
     catch (e) { setErr(e instanceof Error ? e.message : "Failed"); }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { if (role !== "Faculty") load(); }, []);
 
   /* Student pending tasks — own leave applications + open maintenance reports. */
   useEffect(() => {
@@ -77,10 +92,67 @@ function Dashboard({ role, onNavigate }: { role: "Admin" | "Student"; onNavigate
     })();
     return () => { cancelled = true; };
   }, [role]);
-  if (err) return <section className="content"><div className="error-state">{err}<button onClick={load}>Retry</button></div></section>;
-  if (!d) return <section className="content"><div className="skeleton-card"><div className="skeleton-line" style={{ width: "40%" }} /><div className="skeleton-line" style={{ width: "70%" }} /><div className="skeleton-line" style={{ width: "55%" }} /></div></section>;
+  if (role === "Faculty") {
+    const user = getStoredUser();
+    const fd = facultyData?.data;
+    return (
+      <section className="content premium-page premium-dashboard">
+        <div className="page-header">
+          <h1>Faculty Dashboard</h1>
+          <p>Welcome back, {user?.name || "Faculty"}. Live overview of your authorized faculty resources.</p>
+        </div>
+        <div className="dashboard-grid">
+          <div className="dashboard-card">
+            <h3>Students</h3>
+            <p>{fd?.students?.active ?? 0} active of {fd?.students?.total ?? 0} total</p>
+          </div>
+          <div className="dashboard-card">
+            <h3>Rooms</h3>
+            <p>{fd?.rooms?.available ?? 0} available of {fd?.rooms?.total ?? 0} total</p>
+          </div>
+          <div className="dashboard-card">
+            <h3>Complaints</h3>
+            <p>{fd?.complaints?.pending ?? 0} pending, {fd?.complaints?.resolved ?? 0} resolved</p>
+          </div>
+        </div>
+        <div className="dashboard-grid" style={{ marginTop: 16 }}>
+          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Faculty Rooms")}>
+            <h3>Faculty Rooms</h3>
+            <p>View rooms assigned to you.</p>
+          </div>
+          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Students")}>
+            <h3>Student Directory</h3>
+            <p>View student records (read-only).</p>
+          </div>
+          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Notices")}>
+            <h3>Notices & Announcements</h3>
+            <p>Read academic and hostel announcements.</p>
+          </div>
+          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Chat")}>
+            <h3>Chat with Admin</h3>
+            <p>Communicate with administration.</p>
+          </div>
+        </div>
+        {fd?.notices?.length ? (
+          <div className="dashboard-card" style={{ marginTop: 16 }}>
+            <div className="table-header"><div><h3>Recent Notices</h3><p>Latest announcements</p></div></div>
+            {fd.notices.map((n: any) => (
+              <div key={n.id} className="notice-card" style={{ boxShadow: "none" }}>
+                <div className="notice-icon"><Megaphone size={18} /></div>
+                <div><h4>{n.title}</h4><p>{n.message}</p><span className="notice-date">{n.date}</span></div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </section>
+    );
+  }
+  if (err) return <section className="content premium-page premium-dashboard"><div className="error-state">{err}<button onClick={load}>Retry</button></div></section>;
+  if (!d) return <section className="content premium-page premium-dashboard"><div className="skeleton-card"><div className="skeleton-line" style={{ width: "40%" }} /><div className="skeleton-line" style={{ width: "70%" }} /><div className="skeleton-line" style={{ width: "55%" }} /></div></section>;
   const max = Math.max(1, ...d.monthlyFees.map((m) => m.amount));
   const isAdmin = role === "Admin";
+  const user = getStoredUser();
+  const displayName = user?.name || (isAdmin ? "Admin" : "Student");
   const totalCollected = d.fees.paid + d.fees.pending;
   const collectRate = totalCollected > 0 ? Math.round((d.fees.paid / totalCollected) * 100) : 0;
   const resolution = d.complaints.total > 0
@@ -104,17 +176,19 @@ function Dashboard({ role, onNavigate }: { role: "Admin" | "Student"; onNavigate
         { label: "My Fees", icon: CreditCard, page: "Fees" },
       ];
   return (
-    <section className="content">
+    <section className="content premium-page premium-dashboard" style={{ background: "#F5F7FA" }}>
       <div className="page-heading admin-heading">
         <div>
           <span className="admin-eyebrow">{isAdmin ? "Admin Panel" : "Student Panel"}</span>
-          <h2>{isAdmin ? "Admin Dashboard" : "Student Dashboard"}</h2>
+          <h2>{isAdmin ? "Admin Dashboard" : `Welcome, ${displayName}`}</h2>
           <p>{isAdmin ? "Live overview of your whole hostel." : "Live overview from your database."}</p>
         </div>
+        {isAdmin && (
         <div className="admin-heading-badges">
           <span className="admin-pill"><BadgeCheck size={14} /> {d.students.active} active students</span>
           <span className="admin-pill warn"><Clock3 size={14} /> {d.fees.pendingCount} fees pending</span>
         </div>
+        )}
       </div>
       <div className="qa-strip" role="list">
         {quickActions.map((a) => (
@@ -180,6 +254,7 @@ function Dashboard({ role, onNavigate }: { role: "Admin" | "Student"; onNavigate
           )}
         </div>
       )}
+      {isAdmin && (
       <div className="stats-grid admin-stats">
         <div className="stat-card stat-tint-indigo">
           <div className="stat-icon"><Users size={22} /></div>
@@ -202,6 +277,7 @@ function Dashboard({ role, onNavigate }: { role: "Admin" | "Student"; onNavigate
           <div className="stat-body"><span>Complaints</span><h3>{d.complaints.total}</h3><p>{d.complaints.pending} need attention</p></div>
         </div>
       </div>
+      )}
       {isAdmin && (
         <div className="admin-strip">
           <div className="admin-strip-card">
@@ -297,3 +373,4 @@ function Dashboard({ role, onNavigate }: { role: "Admin" | "Student"; onNavigate
   );
 }
 export default Dashboard;
+

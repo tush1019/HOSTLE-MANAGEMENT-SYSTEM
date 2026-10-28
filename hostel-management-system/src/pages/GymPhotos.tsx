@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Dumbbell, Search, Plus } from "lucide-react";
-import { api } from "../lib/api";
+import { Dumbbell, Search, Plus, Trash2 } from "lucide-react";
+import { api, getStoredUser } from "../lib/api";
 import { useToast } from "../components/Toast";
 import Modal from "../components/Modal";
 import { compressImage } from "../lib/images";
@@ -10,7 +10,8 @@ type GymPhoto = {
   equipmentType: string | null; status: string; createdAt: string;
 };
 
-function GymPhotos() {
+function GymPhotos({ role }: { role?: "Admin" | "Student" | null }) {
+  const isAdmin = (role ?? (getStoredUser()?.role as "Admin" | "Student" | null)) === "Admin";
   const { notify } = useToast();
   const [rows, setRows] = useState<GymPhoto[]>([]);
   const [err, setErr] = useState("");
@@ -67,13 +68,24 @@ function GymPhotos() {
     }
   };
 
+  const remove = async (id: number) => {
+    if (!window.confirm("Delete this gym photo?")) return;
+    try {
+      await api(`/gym/photos/${id}`, { method: "DELETE" });
+      notify("Gym photo removed");
+      await load();
+    } catch (e) {
+      notify(e instanceof Error ? e.message : "Failed to remove photo", "error");
+    }
+  };
+
   const combined = q.toLowerCase().trim();
   const filtered = combined
     ? rows.filter((p) => [p.title, p.description || "", p.equipmentType || ""].join(" ").toLowerCase().includes(combined))
     : rows;
 
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading gym-heading">
         <div>
           <Dumbbell size={24} className="page-heading-icon" />
@@ -106,15 +118,24 @@ function GymPhotos() {
                 {p.equipmentType && <p><strong>Equipment:</strong> {p.equipmentType}</p>}
                 {p.description && <p className="muted">{p.description}</p>}
                 <span className={`service-status ${p.status === "Active" ? "status-active" : "status-inactive"}`}>{p.status}</span>
+                {isAdmin && (
+                  <div className="facility-admin-actions" style={{ marginTop: 8 }}>
+                    <button type="button" className="btn-delete" onClick={() => remove(p.id)}>
+                      <Trash2 size={14} /> Delete
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
 
-      <button type="button" className="primary-btn" onClick={() => { setShowModal(true); setForm({ title: "", photo: "", description: "", equipmentType: "", status: "Active" }); setPreview(""); }} style={{ marginTop: 16 }}>
-        <Plus size={17} /> Add Gym Photo
-      </button>
+      {isAdmin && (
+        <button type="button" className="primary-btn" onClick={() => { setShowModal(true); setForm({ title: "", photo: "", description: "", equipmentType: "", status: "Active" }); setPreview(""); }} style={{ marginTop: 16 }}>
+          <Plus size={17} /> Add Gym Photo
+        </button>
+      )}
 
       {showModal && (
         <Modal title="Add Gym Photo" subtitle="Upload a photo of gym equipment" onClose={() => { setShowModal(false); setPreview(""); }}>

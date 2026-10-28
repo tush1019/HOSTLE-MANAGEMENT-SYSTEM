@@ -1,0 +1,39 @@
+/* Premium Student Profile redesign */
+.sp-premium .sp-cover {
+  background: linear-gradient(135deg, #101828 0%, #17253B 100%);
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(16,24,40,.18);
+}
+.sp-premium .sp-cover-empty { background: linear-gradient(135deg, #101828, #17253B); }
+.sp-premium .sp-cover-label { color: rgba(255,255,255,.7); }
+.sp-premium .sp-photo-btn {
+  background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.25);
+  backdrop-filter: blur(6px); border-radius: 10px;
+}
+.sp-premium .sp-photo-btn:hover { background: #6366f1; color: #101828; border-color: #6366f1; }
+.sp-premium .sp-avatar { border: 4px solid #fff; box-shadow: 0 8px 24px rgba(16,24,40,.25); }
+.sp-premium .sp-header { background: #fff; border: 1px solid #e5e7eb; border-radius: 20px; box-shadow: 0 4px 14px rgba(16,24,40,.05); }
+.sp-premium .sp-name { color: #101828; }
+.sp-premium .sp-sub { color: #6b7280; }
+.sp-premium .sp-chip { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+.sp-premium .sp-chip-ok { background: rgba(16,185,129,.12); color: #059669; border-color: rgba(16,185,129,.3); }
+.sp-premium .sp-chip-warn { background: rgba(245,158,11,.12); color: #d97706; border-color: rgba(245,158,11,.3); }
+.sp-premium .sp-card, .sp-premium .settings-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; box-shadow: 0 4px 14px rgba(16,24,40,.05); }
+.sp-premium .settings-card-title { color: #101828; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 14px; }
+.sp-premium .sp-fact { background: #f9fafb; border: 1px solid #f1f5f9; border-radius: 10px; padding: 10px 12px; }
+.sp-premium .sp-fact span { color: #6b7280; font-size: 12px; }
+.sp-premium .sp-fact strong { color: #101828; }
+.sp-premium .sp-gallery-item { border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; transition: transform .18s, box-shadow .18s; }
+.sp-premium .sp-gallery-item:hover { transform: scale(1.03); box-shadow: 0 8px 20px rgba(16,24,40,.12); border-color: #6366f1; }
+.sp-premium .sp-viewer img { border-radius: 12px; }
+.sp-premium button, .sp-premium .btn { transition: all .18s; }
+.sp-premium .empty-state { color: #6b7280; }
+.sp-premium .empty-state strong { color: #101828; }
+
+@media (max-width: 768px) {
+  .sp-premium .sp-grid { grid-template-columns: 1fr; }
+  .sp-premium .sp-cover { height: 170px; }
+}
+@media (max-width: 480px) {
+  .sp-premium .sp-cover { height: 140px; }
+}

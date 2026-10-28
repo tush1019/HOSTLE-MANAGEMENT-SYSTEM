@@ -145,6 +145,7 @@ const srv = app.listen(PORT, async () => {
         { category: "General", title: "Smoke facility 2", details: "test", contactName: "Y", contactPhone: "456", status: "Active" },
         200, okMsg);
       await check("facilities DELETE", "DELETE", `/api/facilities/${fac.data.id}`, undefined, 200, okMsg);
+    }
 
     /* ---------------- mess menu (update) ---------------- */
     await check("mess PUT menu", "PUT", "/api/mess/Monday",
@@ -178,8 +179,6 @@ const srv = app.listen(PORT, async () => {
       { studentName: "Smoke Student", roomNumber: "101", reason: "Smoke reason", startDate: "2026-02-01", endDate: "2026-02-03" },
       201, gotId
     );
-
-    }
 
     /* ---------------- services (the 8-category table) ---------------- */
     for (const category of [

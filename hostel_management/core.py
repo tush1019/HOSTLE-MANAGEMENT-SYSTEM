@@ -221,11 +221,16 @@ class Hostel:
         for room_data in payload.get("rooms", []):
             room = Room.from_dict(room_data)
             hostel.rooms[room.room_number] = room
+            room.students = []
         for student_data in payload.get("students", []):
             student = Student.from_dict(student_data)
             hostel.students[student.student_id] = student
             if student.room_number and student.room_number in hostel.rooms:
-                hostel.rooms[student.room_number].students.append(student)
+                room = hostel.rooms[student.room_number]
+                if not any(existing.student_id == student.student_id for existing in room.students):
+                    room.students.append(student)
+                    student.room_number = room.room_number
+                    student.checked_in = True
         return hostel
 
     def to_dict(self) -> Dict[str, object]:
@@ -241,9 +246,14 @@ class Hostel:
         for room_data in data.get("rooms", []):
             room = Room.from_dict(room_data)
             hostel.rooms[room.room_number] = room
+            room.students = []
         for student_data in data.get("students", []):
             student = Student.from_dict(student_data)
             hostel.students[student.student_id] = student
             if student.room_number and student.room_number in hostel.rooms:
-                hostel.rooms[student.room_number].students.append(student)
+                room = hostel.rooms[student.room_number]
+                if not any(existing.student_id == student.student_id for existing in room.students):
+                    room.students.append(student)
+                    student.room_number = room.room_number
+                    student.checked_in = True
         return hostel

@@ -95,7 +95,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
     }
     setLoading(true);
     try {
-      const data = await postJson<{ message: string; user: { name: string }; devOtp?: string }>(
+      const data = await postJson<{ message: string; user: { name: string }; devOtp?: string; demoOtp?: string }>(
         `${API_BASE_URL}/auth/register`,
         {
           name: name.trim(),
@@ -107,7 +107,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
       );
       setCreatedName(data.user?.name || name.trim());
       setInfo(data.message);
-      setDevOtp(data.devOtp || null);
+      setDevOtp(data.demoOtp || data.devOtp || null);
       setStep("otp");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create account.");
@@ -320,7 +320,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
                 </div>
                 {devOtp && (
                   <div className="demo-otp-box">
-                    <span>DEMO OTP</span>
+                    <span>Demo OTP:</span>
                     <strong>{devOtp}</strong>
                   </div>
                 )}

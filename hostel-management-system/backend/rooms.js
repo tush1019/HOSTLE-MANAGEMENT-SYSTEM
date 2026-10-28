@@ -1,7 +1,9 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+router.use(authMiddleware);
 
 const VALID_STATUS = ["Available", "Occupied", "Maintenance"];
 const VALID_WING = ["Boys", "Girls"];
@@ -39,6 +41,16 @@ const ROOM_SELECT = `id, room_number AS room, floor, type, capacity,
              safety_notes AS safetyNotes,
              created_at AS createdAt`;
 
+async function resolveStudentRoom(req) {
+  try {
+    const [rows] = await db.query(
+      `SELECT room_number FROM students WHERE LOWER(email) = LOWER(?) LIMIT 1`,
+      [req.user.email]
+    );
+    if (rows && rows.length && rows[0].room_number) return rows[0].room_number;
+  } catch (e) {}
+  return null;
+}
 /* GET /api/rooms?search=&wing=&category= */
 router.get("/", async (req, res) => {
   try {
@@ -63,6 +75,14 @@ router.get("/", async (req, res) => {
       params.push(category);
     }
 
+    const isAdmin = req.user.role === "Admin";
+    if (!isAdmin) {
+      const roomNumber = await resolveStudentRoom(req);
+      if (!roomNumber) return res.json({ success: true, data: [] });
+      where.push("room_number = ?");
+      params.push(roomNumber);
+    }
+
     let sql = `SELECT ${ROOM_SELECT} FROM rooms`;
     if (where.length) sql += ` WHERE ${where.join(" AND ")}`;
     sql += ` ORDER BY room_number ASC LIMIT 500`;
@@ -77,7 +97,7 @@ router.get("/", async (req, res) => {
 });
 
 /* POST /api/rooms */
-router.post('/', async (req, res) => {
+router.post('/', requireRole('Admin'), async (req, res) => {
   try {
     const { room, floor, type, capacity, occupied, status, wing, category, washroom, amenities, monthlyRent, photo,
       photoGallery, toiletCondition, cleaningStatus, groundSportsStatus, shaftsStatus, safetyNotes } = req.body;
@@ -149,7 +169,7 @@ router.post('/', async (req, res) => {
 });
 
 /* PUT /api/rooms/:id */
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireRole("Admin"), async (req, res) => {
   try {
     const { room, floor, type, capacity, occupied, status, wing, category, washroom, amenities, monthlyRent, photo, photoGallery, toiletCondition, cleaningStatus, groundSportsStatus, shaftsStatus, safetyNotes } = req.body;
 
@@ -222,7 +242,7 @@ router.put("/:id", async (req, res) => {
 });
 
 /* DELETE /api/rooms/:id */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireRole("Admin"), async (req, res) => {
   try {
     const [result] = await db.query(`DELETE FROM rooms WHERE id = ?`, [req.params.id]);
 

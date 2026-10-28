@@ -29,7 +29,7 @@ export default function FacultyRooms() {
   };
 
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="content-header"><h2>Faculty–Room Assignment</h2><p>Assign faculty members to hostel rooms.</p></div>
       <form onSubmit={submit} className="form-card" style={{ marginBottom: 16, display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))" }}>
         <input placeholder="Faculty name" value={form.facultyName} onChange={(e) => setForm({ ...form, facultyName: e.target.value })} required />

@@ -109,7 +109,7 @@ function MaintenanceRequest({ role }: { role: "Admin" | "Student" | null }) {
     : rows;
 
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading maint-heading">
         <div>
           <Wrench size={24} className="page-heading-icon" />
@@ -209,3 +209,4 @@ function MaintenanceRequest({ role }: { role: "Admin" | "Student" | null }) {
 }
 
 export default MaintenanceRequest;
+

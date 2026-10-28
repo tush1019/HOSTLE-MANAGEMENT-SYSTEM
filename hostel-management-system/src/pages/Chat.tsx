@@ -157,12 +157,12 @@ export default function Chat() {
             <button
               key={c.partnerId}
               onClick={() => startChat(c.partnerId)}
-              className={`w-full text-left p-3 border-b hover:bg-gray-50 ${activeId === c.partnerId ? "bg-blue-50" : ""}`}
+              className={`w-full text-left p-3 border-b hover:bg-[#F5F7FA] ${activeId === c.partnerId ? "bg-[#F0E6D2]" : ""}`}
             >
               <div className="flex justify-between items-center">
                 <span className="font-medium truncate">{c.partnerName}</span>
                 {c.unread > 0 && (
-                  <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full">{c.unread}</span>
+                  <span className="bg-[#C9A96E] text-[#101828] text-xs px-2 py-0.5 rounded-full font-semibold">{c.unread}</span>
                 )}
               </div>
               <div className="text-xs text-gray-500 truncate">{c.lastMessage}</div>
@@ -174,7 +174,7 @@ export default function Chat() {
               <button
                 key={c.id}
                 onClick={() => startChat(c.id)}
-                className={`w-full text-left p-3 border-b hover:bg-gray-50 ${activeId === c.id ? "bg-blue-50" : ""}`}
+                className={`w-full text-left p-3 border-b hover:bg-[#F5F7FA] ${activeId === c.id ? "bg-[#F0E6D2]" : ""}`}
               >
                 <div className="font-medium truncate">{c.name}</div>
                 <div className="text-xs text-gray-500 truncate">{c.email}</div>
@@ -197,7 +197,7 @@ export default function Chat() {
                 const mine = m.senderId === me?.id;
                 return (
                   <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[70%] px-3 py-2 rounded-lg ${mine ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800"}`}>
+                    <div className={`max-w-[70%] px-3 py-2 rounded-lg ${mine ? "bg-[#101828] text-white" : "bg-[#F5F7FA] text-[#101828] border border-[#E5E7EB]"}`}>
                       <div className="text-sm whitespace-pre-wrap">{m.body}</div>
                       <div className={`text-[10px] mt-1 ${mine ? "text-blue-100" : "text-gray-400"}`}>
                         {new Date(m.createdAt).toLocaleString()}
@@ -226,7 +226,7 @@ export default function Chat() {
               <button
                 onClick={send}
                 disabled={sending || !draft.trim()}
-                className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+                className="bg-[#C9A96E] text-[#101828] px-4 py-2 rounded font-semibold disabled:opacity-50 hover:bg-[#B8965C]"
               >
                 {sending ? "Sending…" : "Send"}
               </button>
@@ -241,3 +241,4 @@ export default function Chat() {
     </div>
   );
 }
+

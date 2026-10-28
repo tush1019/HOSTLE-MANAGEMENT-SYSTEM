@@ -75,7 +75,7 @@ function Mess({ search, role }: { search: string; role: "Admin" | "Student" | nu
     : rows;
   const published = rows.filter((d) => d.status === "Published").length;
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading mess-heading">
         <div>
           <h2>Mess Menu</h2>
@@ -189,3 +189,4 @@ function Mess({ search, role }: { search: string; role: "Admin" | "Student" | nu
 }
 
 export default Mess;
+

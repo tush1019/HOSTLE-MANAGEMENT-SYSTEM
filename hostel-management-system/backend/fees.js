@@ -1,7 +1,17 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+const adminOnly = [authMiddleware, requireRole("Admin")];
+
+async function resolveStudentName(req) {
+  try {
+    const [rows] = await db.query(`SELECT name FROM students WHERE LOWER(email) = LOWER(?) LIMIT 1`, [req.user.email]);
+    if (rows && rows.length) return rows[0].name;
+  } catch (e) {}
+  return req.user.email || req.user.name || "Unknown";
+}
 
 const VALID_METHODS = ["UPI", "Cash", "Card", "Bank Transfer"];
 const VALID_STATUS = ["Paid", "Pending"];
@@ -20,35 +30,53 @@ const FEE_SELECT = `id, payment_code AS paymentCode, student_name AS student,
                  payment_date AS rawDate, method, status, created_at AS createdAt`;
 
 /* GET /api/fees?search= */
-router.get("/", async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
   try {
     const search = (req.query.search || "").trim();
+    const isAdmin = req.user.role === "Admin";
 
-    let sql = `SELECT ${FEE_SELECT}
-               FROM fees`;
+    let sql = `SELECT ${FEE_SELECT} FROM fees`;
     const params = [];
+    const where = [];
 
+    if (!isAdmin) {
+      const name = await resolveStudentName(req);
+      where.push("student_name = ?");
+      params.push(name);
+    }
     if (search) {
-      sql += ` WHERE student_name LIKE ? OR payment_code LIKE ? OR room_number LIKE ?`;
+      where.push(`(student_name LIKE ? OR payment_code LIKE ? OR room_number LIKE ?)`);
       const like = `%${search}%`;
       params.push(like, like, like);
     }
-
+    if (where.length) sql += ` WHERE ` + where.join(" AND ");
     sql += ` ORDER BY payment_date DESC, created_at DESC LIMIT 500`;
 
     const [rows] = await db.query(sql, params);
 
-    // Summary numbers for the cards
-    const [summaryRows] = await db.query(`
-      SELECT
-        COUNT(*) AS total,
-        COALESCE(SUM(CASE WHEN status = 'Paid' THEN amount ELSE 0 END), 0) AS paidAmount,
-        COALESCE(SUM(CASE WHEN status = 'Pending' THEN amount ELSE 0 END), 0) AS pendingAmount,
-        COALESCE(SUM(CASE WHEN status = 'Paid' THEN 1 ELSE 0 END), 0) AS paidCount,
-        COALESCE(SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END), 0) AS pendingCount
-      FROM fees
-    `);
-    const summary = summaryRows[0] || {};
+    let summary = {};
+    if (isAdmin) {
+      const [summaryRows] = await db.query(`
+        SELECT COUNT(*) AS total,
+               COALESCE(SUM(CASE WHEN status = 'Paid' THEN amount ELSE 0 END), 0) AS paidAmount,
+               COALESCE(SUM(CASE WHEN status = 'Pending' THEN amount ELSE 0 END), 0) AS pendingAmount,
+               COALESCE(SUM(CASE WHEN status = 'Paid' THEN 1 ELSE 0 END), 0) AS paidCount,
+               COALESCE(SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END), 0) AS pendingCount
+        FROM fees
+      `);
+      summary = summaryRows[0] || {};
+    } else {
+      const name = await resolveStudentName(req);
+      const [summaryRows] = await db.query(`
+        SELECT COUNT(*) AS total,
+               COALESCE(SUM(CASE WHEN status = 'Paid' THEN amount ELSE 0 END), 0) AS paidAmount,
+               COALESCE(SUM(CASE WHEN status = 'Pending' THEN amount ELSE 0 END), 0) AS pendingAmount,
+               COALESCE(SUM(CASE WHEN status = 'Paid' THEN 1 ELSE 0 END), 0) AS paidCount,
+               COALESCE(SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END), 0) AS pendingCount
+        FROM fees WHERE student_name = ?
+      `, [name]);
+      summary = summaryRows[0] || {};
+    }
 
     res.json({ success: true, data: rows, summary });
   } catch (error) {
@@ -58,7 +86,7 @@ router.get("/", async (req, res) => {
 });
 
 /* POST /api/fees */
-router.post("/", async (req, res) => {
+router.post("/", adminOnly, async (req, res) => {
   try {
     const { student, room, amount, date, method, status,
       roomCharge, electricityCharge, foodCharge, cleaningCharge, otherCharge } = req.body;
@@ -122,7 +150,7 @@ router.post("/", async (req, res) => {
 });
 
 /* PATCH /api/fees/:id/status  { status: "Paid" | "Pending" } */
-router.patch("/:id/status", async (req, res) => {
+router.patch("/:id/status", adminOnly, async (req, res) => {
   try {
     const { status } = req.body;
 
@@ -147,7 +175,7 @@ router.patch("/:id/status", async (req, res) => {
 });
 
 /* DELETE /api/fees/:id */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", adminOnly, async (req, res) => {
   try {
     const [result] = await db.query(`DELETE FROM fees WHERE id = ?`, [req.params.id]);
 

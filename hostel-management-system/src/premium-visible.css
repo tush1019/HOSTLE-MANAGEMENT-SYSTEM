@@ -1,0 +1,9 @@
+/* Premium visible overrides */
+.public-navbar { background: #101828 !important; color: #fff !important; }
+.public-brand-icon { background: #6366f1 !important; color: #101828 !important; }
+.brand-name { color: #6366f1 !important; }
+.public-nav button, .public-nav a { color: #E5E7EB !important; }
+.public-nav button:hover, .public-nav a:hover { color: #6366f1 !important; }
+.premium-dashboard .page-heading h2 { color: #101828 !important; }
+.premium-dashboard .stat-card { background: #fff !important; border: 1px solid #E5E7EB !important; border-radius: 16px !important; }
+.premium-dashboard .stat-icon { background: #E0E7FF !important; color: #6366f1 !important; }

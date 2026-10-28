@@ -1,7 +1,9 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+router.use(authMiddleware);
 
 const VALID_CATEGORIES = [
   "Warden",
@@ -60,7 +62,7 @@ router.get("/", async (req, res) => {
 });
 
 /* POST /api/facilities */
-router.post("/", async (req, res) => {
+router.post("/", requireRole("Admin"), async (req, res) => {
   try {
     const { category, title, details, contactName, contactPhone, status } = req.body;
 
@@ -94,7 +96,7 @@ router.post("/", async (req, res) => {
 });
 
 /* PUT /api/facilities/:id */
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireRole("Admin"), async (req, res) => {
   try {
     const { category, title, details, contactName, contactPhone, status } = req.body;
 
@@ -133,7 +135,7 @@ router.put("/:id", async (req, res) => {
 });
 
 /* DELETE /api/facilities/:id */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireRole("Admin"), async (req, res) => {
   try {
     const [result] = await db.query(`DELETE FROM facilities WHERE id = ?`, [req.params.id]);
 

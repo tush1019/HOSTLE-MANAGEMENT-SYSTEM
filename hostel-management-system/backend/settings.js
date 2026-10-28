@@ -5,8 +5,10 @@
    ============================================================ */
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+router.use(authMiddleware);
 
 const APP_SETTING_KEYS = [
   "app_name", "app_tagline", "hostel_name", "hostel_contact",
@@ -34,8 +36,7 @@ async function isAdminUser(userId, email) {
 /* GET /api/settings — all app settings (admin) */
 router.get("/", async (req, res) => {
   try {
-    const { userId, email } = getUserIdEmail(req);
-    if (!Number.isFinite(userId) || !(await isAdminUser(userId, email))) {
+    if (req.user.role !== "Admin") {
       return res.status(403).json({ success: false, message: "Administrator access required" });
     }
     const [rows] = await db.query("SELECT setting_key, setting_value, updated_by, updated_at FROM app_settings");
@@ -48,11 +49,9 @@ router.get("/", async (req, res) => {
   }
 });
 
-/* PUT /api/settings/:key — update one app setting (admin) */
 router.put("/:key", async (req, res) => {
   try {
-    const { userId, email } = getUserIdEmail(req);
-    if (!Number.isFinite(userId) || !(await isAdminUser(userId, email))) {
+    if (req.user.role !== "Admin") {
       return res.status(403).json({ success: false, message: "Administrator access required" });
     }
     const key = String(req.params.key);
@@ -61,6 +60,7 @@ router.put("/:key", async (req, res) => {
     }
     const { value } = req.body;
     const settingValue = value === undefined || value === null ? null : String(value);
+    const userId = req.user.id;
 
     await db.query(
       `INSERT INTO app_settings (setting_key, setting_value, updated_by, updated_at)
@@ -78,10 +78,7 @@ router.put("/:key", async (req, res) => {
 /* GET /api/settings/me — current user's display preferences (owner) */
 router.get("/me", async (req, res) => {
   try {
-    const { userId, email } = getUserIdEmail(req);
-    if (!Number.isFinite(userId) || !email) {
-      return res.status(400).json({ success: false, message: "userId and email are required" });
-    }
+    const userId = req.user.id;
     const [rows] = await db.query(
       `SELECT theme, accent_color, layout, notifications FROM user_preferences WHERE user_id = ? LIMIT 1`,
       [userId]
@@ -99,13 +96,10 @@ router.get("/me", async (req, res) => {
 /* PUT /api/settings/me — update current user's display preferences (owner) */
 router.put("/me", async (req, res) => {
   try {
-    const { userId, email } = getUserIdEmail(req);
-    if (!Number.isFinite(userId) || !email) {
-      return res.status(400).json({ success: false, message: "userId and email are required" });
-    }
+    const userId = req.user.id;
     const [owned] = await db.query(
-      `SELECT id FROM users WHERE id = ? AND LOWER(email) = LOWER(?) LIMIT 1`,
-      [userId, email]
+      `SELECT id FROM users WHERE id = ? LIMIT 1`,
+      [userId]
     );
     if (!owned.length) {
       return res.status(403).json({ success: false, message: "Session does not match any account" });

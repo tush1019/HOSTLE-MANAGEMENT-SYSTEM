@@ -1,7 +1,17 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+const adminOnly = [authMiddleware, requireRole("Admin")];
+
+async function resolveStudentName(req) {
+  try {
+    const [rows] = await db.query(`SELECT name FROM students WHERE LOWER(email) = LOWER(?) LIMIT 1`, [req.user.email]);
+    if (rows && rows.length) return rows[0].name;
+  } catch (e) {}
+  return req.user.email || req.user.name || "Unknown";
+}
 
 const VALID_PRIORITY = ["Low", "Medium", "High"];
 const VALID_STATUS = ["Pending", "In Progress", "Resolved"];
@@ -11,12 +21,13 @@ const MAINT_SELECT = `id, request_code AS requestCode, student_name AS studentNa
   priority, status, created_at AS createdAt`;
 
 /* GET /api/maintenance?search=&status=&room= */
-router.get("/", async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
   try {
     const search = (req.query.search || "").trim();
     const status = (req.query.status || "").trim();
     const room = (req.query.room || "").trim();
     const student = (req.query.student || "").trim();
+    const isAdmin = req.user.role === "Admin";
 
     let sql = `SELECT ${MAINT_SELECT} FROM maintenance_requests`;
     const params = [];
@@ -35,7 +46,11 @@ router.get("/", async (req, res) => {
       where.push("room_number = ?");
       params.push(room);
     }
-    if (student) {
+    if (!isAdmin) {
+      const name = await resolveStudentName(req);
+      where.push("student_name = ?");
+      params.push(name);
+    } else if (student) {
       where.push("student_name = ?");
       params.push(student);
     }
@@ -52,7 +67,7 @@ router.get("/", async (req, res) => {
 });
 
 /* GET /api/maintenance/:id */
-router.get("/:id", async (req, res) => {
+router.get("/:id", authMiddleware, async (req, res) => {
   try {
     const [rows] = await db.query(
       `SELECT ${MAINT_SELECT} FROM maintenance_requests WHERE id = ?`,
@@ -60,6 +75,12 @@ router.get("/:id", async (req, res) => {
     );
     if (rows.length === 0) {
       return res.status(404).json({ success: false, message: "Maintenance request not found" });
+    }
+    if (req.user.role !== "Admin") {
+      const name = await resolveStudentName(req);
+      if (rows[0].studentName !== name) {
+        return res.status(403).json({ success: false, message: "Forbidden" });
+      }
     }
     res.json({ success: true, data: rows[0] });
   } catch (error) {
@@ -69,11 +90,15 @@ router.get("/:id", async (req, res) => {
 });
 
 /* POST /api/maintenance  (Student submits a maintenance request with optional photo) */
-router.post("/", async (req, res) => {
+router.post("/", authMiddleware, async (req, res) => {
   try {
     const { studentName, roomNumber, title, description, photo, priority } = req.body;
+    const isAdmin = req.user.role === "Admin";
+    const resolvedName = isAdmin && studentName && studentName.trim()
+      ? studentName.trim()
+      : await resolveStudentName(req);
 
-    if (!studentName || !studentName.trim()) {
+    if (!resolvedName) {
       return res.status(400).json({ success: false, message: "Student name is required" });
     }
     if (!title || !title.trim()) {
@@ -86,7 +111,7 @@ router.post("/", async (req, res) => {
       `INSERT INTO maintenance_requests (student_name, room_number, title, description, photo, priority, status)
        VALUES (?, ?, ?, ?, ?, ?, 'Pending')`,
       [
-        studentName.trim(),
+        resolvedName,
         roomNumber ? roomNumber.trim() : null,
         title.trim(),
         description ? description.trim() : null,
@@ -111,7 +136,7 @@ router.post("/", async (req, res) => {
 });
 
 /* PATCH /api/maintenance/:id/status  { status }  (Admin updates status) */
-router.patch("/:id/status", async (req, res) => {
+router.patch("/:id/status", adminOnly, async (req, res) => {
   try {
     const { status } = req.body;
 
@@ -136,7 +161,7 @@ router.patch("/:id/status", async (req, res) => {
 });
 
 /* DELETE /api/maintenance/:id  (Admin) */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", adminOnly, async (req, res) => {
   try {
     const [result] = await db.query(`DELETE FROM maintenance_requests WHERE id = ?`, [req.params.id]);
 

@@ -1,7 +1,9 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+router.use(authMiddleware);
 
 const VALID_CATEGORIES = [
   "Emergency Contact",
@@ -68,7 +70,7 @@ router.get("/:id", async (req, res) => {
 });
 
 /* POST /api/services  (Admin only) */
-router.post("/", async (req, res) => {
+router.post("/", requireRole("Admin"), async (req, res) => {
   try {
     const { category, title, details, contactName, contactPhone, photo, status } = req.body;
 
@@ -80,7 +82,7 @@ router.post("/", async (req, res) => {
       `INSERT INTO hostel_services (category, title, details, contact_name, contact_phone, photo, status)
        VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
-        VALID_CATEGORIES.includes(category) ? category : "General",
+        VALID_CATEGORIES.includes(category) ? category : "Emergency Contact",
         title.trim(),
         details && details.trim() ? details.trim() : null,
         contactName && contactName.trim() ? contactName.trim() : null,
@@ -103,7 +105,7 @@ router.post("/", async (req, res) => {
 });
 
 /* PUT /api/services/:id  (Admin only) */
-router.put("/:id", async (req, res) => {
+router.put("/:id", requireRole("Admin"), async (req, res) => {
   try {
     const { category, title, details, contactName, contactPhone, photo, status } = req.body;
 
@@ -115,7 +117,7 @@ router.put("/:id", async (req, res) => {
       `UPDATE hostel_services SET category = ?, title = ?, details = ?,
         contact_name = ?, contact_phone = ?, photo = ?, status = ? WHERE id = ?`,
       [
-        VALID_CATEGORIES.includes(category) ? category : "General",
+        VALID_CATEGORIES.includes(category) ? category : "Emergency Contact",
         title.trim(),
         details && details.trim() ? details.trim() : null,
         contactName && contactName.trim() ? contactName.trim() : null,
@@ -143,7 +145,7 @@ router.put("/:id", async (req, res) => {
 });
 
 /* DELETE /api/services/:id  (Admin only) */
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", requireRole("Admin"), async (req, res) => {
   try {
     const [result] = await db.query(`DELETE FROM hostel_services WHERE id = ?`, [req.params.id]);
 

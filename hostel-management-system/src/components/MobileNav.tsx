@@ -8,12 +8,12 @@ type Section = {
     name: string;
     icon: React.ElementType;
     route: string;
-    roles: ("Admin" | "Student")[];
+    roles: ("Admin" | "Student" | "Faculty")[];
   }>;
 };
 
 type MobileNavProps = {
-  role: "Admin" | "Student" | null;
+  role: "Admin" | "Student" | "Faculty" | null;
   activePage: string;
   setActivePage: (page: string) => void;
   onLogout: () => void;
@@ -129,67 +129,38 @@ function MobileNav({ role, activePage, setActivePage, onLogout, isOpen, onClose,
   ];
 
   // sections computed on demand in render
+  const sections = role === "Admin" ? ADMIN_SECTIONS : STUDENT_SECTIONS;
+
 
   return (
     <>
-      {/* ST Button — visible only on mobile */}
-      <button
-        type="button"
-        className="st-button"
-        aria-label="Open navigation menu"
-        onClick={() => onOpen()}
-      >
+      <button type="button" className="st-button" aria-label="Open navigation menu" onClick={() => onOpen()}>
         ST
       </button>
-
-      {/* Mobile Drawer */}
       {drawerOpen && (
-        <div
-          className="mobile-nav-overlay"
-          onClick={onClose}
-          aria-hidden="true"
-          style={{ zIndex: 1040, pointerEvents: "auto" }}
-        >
-          <nav
-            className="mobile-nav-drawer"
-            style={{ zIndex: 1050 }}
-          >
+        <div className="mobile-nav-overlay" onClick={onClose} aria-hidden="true" style={{ zIndex: 1040, pointerEvents: "auto" }}>
+          <nav className="mobile-nav-drawer" style={{ zIndex: 1050 }}>
             <div className="mobile-nav-header">
               <div className="mobile-nav-brand">
-                <div className="mobile-nav-icon">
-                  <Building2 size={24} />
-                </div>
+                <div className="mobile-nav-icon"><Building2 size={24} /></div>
                 <div>
                   <strong>HostelHub</strong>
-                  <div className="mobile-nav-subtitle">
-                    {role === "Student" ? "Student Panel" : "Admin Panel"}
-                  </div>
+                  <div className="mobile-nav-subtitle">{role === "Student" ? "Student Panel" : role === "Faculty" ? "Faculty Panel" : "Admin Panel"}</div>
                 </div>
               </div>
-              <button
-                type="button"
-                className="mobile-nav-close"
-                aria-label="Close menu"
-                onClick={onClose}
-              >
-                <X size={22} />
-              </button>
+              <button type="button" className="mobile-nav-close" aria-label="Close menu" onClick={onClose}><X size={22} /></button>
             </div>
-
             {user && (
               <div className="mobile-nav-user">
-                <div className="mobile-nav-avatar">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
+                <div className="mobile-nav-avatar">{user.name.charAt(0).toUpperCase()}</div>
                 <div>
                   <div className="mobile-nav-user-name">{user.name}</div>
                   <div className="mobile-nav-user-role">{user.role}</div>
                 </div>
               </div>
             )}
-
             <div className="mobile-nav-sections">
-              {(role === "Admin" ? ADMIN_SECTIONS : STUDENT_SECTIONS).map((section, si) => (
+              {sections.map((section, si) => (
                 <div key={si} className="mobile-nav-section-group">
                   <h3 className="mobile-nav-section-label">{section.label}</h3>
                   <ul className="mobile-nav-section-list">
@@ -200,12 +171,7 @@ function MobileNav({ role, activePage, setActivePage, onLogout, isOpen, onClose,
                         const active = activePage === item.name;
                         return (
                           <li key={item.name}>
-                            <button
-                              type="button"
-                              className={`mobile-nav-item ${active ? "active" : ""}`}
-                              onClick={() => go(item.route)}
-                              aria-current={active ? "page" : undefined}
-                            >
+                            <button type="button" className={`mobile-nav-item ${active ? "active" : ""}`} onClick={() => go(item.route)} aria-current={active ? "page" : undefined}>
                               <Icon size={18} />
                               <span className="mobile-nav-item-label">{item.name}</span>
                               <ChevronRight size={14} />
@@ -217,7 +183,6 @@ function MobileNav({ role, activePage, setActivePage, onLogout, isOpen, onClose,
                 </div>
               ))}
             </div>
-
             <div className="mobile-nav-logout" onClick={handleLogout}>
               <UserCircle size={20} />
               <span>Logout</span>
@@ -228,6 +193,9 @@ function MobileNav({ role, activePage, setActivePage, onLogout, isOpen, onClose,
       )}
     </>
   );
-}
 
+}
 export default MobileNav;
+
+
+

@@ -83,7 +83,7 @@ function LeaveManagement({ role }: { role: "Admin" | "Student" | null }) {
   const isStudent = role === "Student";
 
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading leave-heading">
         <div>
           <MapPin size={24} className="page-heading-icon" />

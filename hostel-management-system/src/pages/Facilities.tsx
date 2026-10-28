@@ -14,7 +14,7 @@ import {
   Plus,
   X,
 } from "lucide-react";
-import { api } from "../lib/api";
+import { api, getStoredUser } from "../lib/api";
 
 type Facility = {
   id: number;
@@ -107,7 +107,7 @@ function FacilityCard({ facility, isAdmin, onEdit, onDelete }: { facility: Facil
 }
 
 export default function Facilities({ role }: { role?: "Admin" | "Student" | null }) {
-  const isAdmin = role === "Admin";
+  const isAdmin = (role ?? (getStoredUser()?.role as "Admin" | "Student" | null)) === "Admin";
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
@@ -206,7 +206,7 @@ export default function Facilities({ role }: { role?: "Admin" | "Student" | null
   };
 
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading facility-heading">
         <div>
           <h2>Facility Directory</h2>
@@ -291,3 +291,4 @@ export default function Facilities({ role }: { role?: "Admin" | "Student" | null
     </section>
   );
 }
+

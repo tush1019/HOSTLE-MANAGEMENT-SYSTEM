@@ -12,7 +12,7 @@ type DrawerItem = {
   route: string;
   label: string;
   icon: React.ElementType;
-  roles: ("Admin" | "Student")[];
+  roles: ("Admin" | "Student" | "Faculty")[];
   group: string;
 };
 
@@ -68,6 +68,7 @@ const ADMIN_ITEMS: DrawerItem[] = [
   { route: "Housekeeping", label: "Housekeeping", icon: MapPin, roles: ["Admin"], group: "accommodation" },
   { route: "Water & Electricity", label: "Water & Electricity", icon: Zap, roles: ["Admin"], group: "accommodation" },
   { route: "Study Room", label: "Study Room Management", icon: LayoutList, roles: ["Admin"], group: "facilities" },
+  { route: "Facilities", label: "Facilities Management", icon: Building2, roles: ["Admin"], group: "facilities" },
   { route: "Gym Photos", label: "Gym & Facilities", icon: Dumbbell, roles: ["Admin"], group: "facilities" },
   { route: "Notices", label: "Notices & Announcements", icon: Bell, roles: ["Admin"], group: "communication" },
   { route: "Chat", label: "Student Chat", icon: MessageCircle, roles: ["Admin"], group: "communication" },
@@ -76,15 +77,29 @@ const ADMIN_ITEMS: DrawerItem[] = [
   { route: "Settings", label: "Settings", icon: Settings, roles: ["Admin"], group: "settings" },
 ];
 
+const FACULTY_ITEMS: DrawerItem[] = [
+  { route: "Dashboard", label: "Faculty Overview", icon: LayoutDashboard, roles: ["Faculty"], group: "overview" },
+{ route: "Attendance", label: "Attendance", icon: Calendar, roles: ["Faculty"], group: "records" },
+  { route: "Assignments", label: "Assignments", icon: Calendar, roles: ["Faculty"], group: "records" },
+  { route: "Timetable", label: "Timetable", icon: Calendar, roles: ["Faculty"], group: "records" },
+  { route: "Faculty Reports", label: "Reports", icon: BarChart3, roles: ["Faculty"], group: "reports" },
+
+  { route: "Students", label: "Student Directory", icon: Users, roles: ["Faculty"], group: "records" },
+  { route: "Faculty Rooms", label: "Faculty Rooms", icon: BedDouble, roles: ["Faculty"], group: "accommodation" },
+  { route: "Notices", label: "Notices & Announcements", icon: Bell, roles: ["Faculty"], group: "communication" },
+  { route: "Chat", label: "Chat with Admin", icon: MessageCircle, roles: ["Faculty"], group: "communication" },
+  { route: "Settings", label: "Settings", icon: Settings, roles: ["Faculty"], group: "settings" },
+];
+
 type SidebarProps = {
   activePage: string;
   setActivePage: (page: string) => void;
   onLogout: () => void;
-  role: "Admin" | "Student" | null;
+  role: "Admin" | "Student" | "Faculty" | null;
 };
 
 function Sidebar({ activePage, setActivePage, onLogout, role }: SidebarProps) {
-  const allItems = role === "Admin" ? ADMIN_ITEMS : STUDENT_ITEMS;
+  const allItems = role === "Admin" ? ADMIN_ITEMS : role === "Faculty" ? FACULTY_ITEMS : STUDENT_ITEMS;
   const menuItems = allItems.filter((i) => i.roles.includes(role));
 
   const logout = () => {
@@ -93,6 +108,7 @@ function Sidebar({ activePage, setActivePage, onLogout, role }: SidebarProps) {
     fetch(`${API_BASE_URL}/auth/logout`, { method: "POST" }).catch(() => {});
     localStorage.removeItem("hostelRole");
     localStorage.removeItem("hostelUser");
+    localStorage.removeItem("hostelToken");
     document.body.classList.remove("sidebar-open");
     onLogout();
   };
@@ -114,7 +130,7 @@ function Sidebar({ activePage, setActivePage, onLogout, role }: SidebarProps) {
         </span>
         <div className="sidebar-brand">
           <h2>HostelHub</h2>
-          <span>{role === "Student" ? "Student Panel" : "Admin Panel"}</span>
+          <span>{role === "Student" ? "Student Panel" : role === "Faculty" ? "Faculty Panel" : "Admin Panel"}</span>
         </div>
         <button
           type="button"

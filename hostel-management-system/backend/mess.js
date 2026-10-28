@@ -1,7 +1,9 @@
 const express = require("express");
 const db = require("./db");
+const { authMiddleware, requireRole } = require("./middleware/auth");
 
 const router = express.Router();
+router.use(authMiddleware);
 
 /* GET /api/mess/photos  — mess photos with food quality ratings */
 router.get("/photos", async (req, res) => {
@@ -71,7 +73,7 @@ router.get("/", async (req, res) => {
 });
 
 /* PUT /api/mess/:day  { breakfast, lunch, dinner, status } */
-router.put("/:day", async (req, res) => {
+router.put("/:day", requireRole("Admin"), async (req, res) => {
   try {
     const { breakfast, lunch, dinner, status } = req.body;
     const menuStatus = ["Published", "Pending"].includes(status) ? status : "Published";
@@ -104,7 +106,7 @@ router.put("/:day", async (req, res) => {
 });
 
 /* PATCH /api/mess/:day/status  { status } */
-router.patch("/:day/status", async (req, res) => {
+router.patch("/:day/status", requireRole("Admin"), async (req, res) => {
   try {
     const { status } = req.body;
 
@@ -127,5 +129,20 @@ router.patch("/:day/status", async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to update status" });
   }
 });
+
+/* DELETE /api/mess/photos/:id */
+router.delete("/photos/:id", requireRole("Admin"), async (req, res) => {
+  try {
+    const [result] = await db.query(`DELETE FROM mess_photos WHERE id = ?`, [req.params.id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: "Photo not found" });
+    }
+    res.json({ success: true, message: "Photo removed" });
+  } catch (error) {
+    console.error("Mess photo delete error:", error);
+    res.status(500).json({ success: false, message: "Failed to remove photo" });
+  }
+});
+
 
 module.exports = router;

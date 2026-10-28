@@ -4,6 +4,7 @@ import { api, getStoredUser } from "../lib/api";
 import { formatINR } from "../lib/format";
 import { useToast } from "../components/Toast";
 import Modal from "../components/Modal";
+import "../rooms-premium.css";
 
 type Room = {
   id: number; room: string; floor: string; type: string;
@@ -163,7 +164,7 @@ function Rooms({ search, role }: { search: string; role?: string }) {
   const occ = rows.filter((r) => r.status === "Occupied").length;
   const maint = rows.filter((r) => r.status === "Maintenance").length;
   return (
-    <section className="content">
+    <section className="content premium-page rooms-premium">
       <div className="page-heading rooms-heading">
         <div>
           <h2>Rooms</h2>
@@ -390,3 +391,4 @@ function Rooms({ search, role }: { search: string; role?: string }) {
 }
 
 export default Rooms;
+

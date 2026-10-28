@@ -86,7 +86,7 @@ function MessPhotos({ role }: { role: "Admin" | "Student" | null }) {
     : rows;
 
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading messphoto-heading">
         <div>
           <Utensils size={24} className="page-heading-icon" />
@@ -175,3 +175,4 @@ function MessPhotos({ role }: { role: "Admin" | "Student" | null }) {
 }
 
 export default MessPhotos;
+

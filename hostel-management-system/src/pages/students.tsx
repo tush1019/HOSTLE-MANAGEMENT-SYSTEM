@@ -12,7 +12,7 @@ type Student = {
 
 const EMPTY = { name: "", email: "", phone: "", course: "", room: "", status: "Active" };
 
-function Students({ search, role }: { search: string; role: "Admin" | "Student" | null }) {
+function Students({ search, role }: { search: string; role: "Admin" | "Student" | "Faculty" | null }) {
   const { notify } = useToast();
   const [rows, setRows] = useState<Student[]>([]);
   const [err, setErr] = useState("");
@@ -91,7 +91,7 @@ function Students({ search, role }: { search: string; role: "Admin" | "Student" 
     : rows;
   const active = rows.filter((s) => s.status === "Active").length;
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading students-heading">
         <div>
           <h2>Students</h2>
@@ -224,3 +224,4 @@ function Students({ search, role }: { search: string; role: "Admin" | "Student" 
 }
 
 export default Students;
+

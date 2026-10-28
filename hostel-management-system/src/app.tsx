@@ -3,7 +3,6 @@ import { getStoredUser } from "./lib/api";
 
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
-import MobileNav from "./components/MobileNav";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -20,6 +19,10 @@ import Mess from "./pages/Mess";
 import Notices from "./pages/Notices";
 import Reports from "./pages/Reports";
 import Facilities from "./pages/Facilities";
+import Attendance from "./pages/Attendance";
+import Assignments from "./pages/Assignments";
+import Timetable from "./pages/Timetable";
+import FacultyReports from "./pages/FacultyReports";
 import FacultyRooms from "./pages/FacultyRooms";
 import Settings from "./pages/Settings";
 import EmergencyContacts from "./pages/EmergencyContacts";
@@ -37,7 +40,7 @@ import GymPhotos from "./pages/GymPhotos";
 import RoomIssuePhotos from "./pages/RoomIssuePhotos";
 import StudentProfile from "./pages/StudentProfile";
 
-type Role = "Admin" | "Student" | null;
+type Role = "Admin" | "Student" | "Faculty" | null;
 type PublicPage = "Home" | "Login" | "Signup";
 
 const ADMIN_ONLY_ROUTES = new Set([
@@ -59,7 +62,7 @@ function App() {
   const storedRole = localStorage.getItem("hostelRole");
 
   const [role, setRole] = useState<Role>(
-    storedRole === "Admin" || storedRole === "Student" ? storedRole : null
+    storedRole === "Admin" || storedRole === "Student" || storedRole === "Faculty" ? storedRole : null
   );
 
   const [publicPage, setPublicPage] = useState<PublicPage>("Home");
@@ -69,13 +72,13 @@ function App() {
 
   useEffect(() => {
     const stored = localStorage.getItem("hostelRole");
-    setRole(stored === "Admin" || stored === "Student" ? stored : null);
+    setRole(stored === "Admin" || stored === "Student" || stored === "Faculty" ? stored : null);
   }, []);
 
   useEffect(() => {
     const handleStorage = () => {
       const stored = localStorage.getItem("hostelRole");
-      setRole(stored === "Admin" || stored === "Student" ? stored : null);
+      setRole(stored === "Admin" || stored === "Student" || stored === "Faculty" ? stored : null);
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
@@ -96,7 +99,7 @@ function App() {
 
   const goPage = useCallback(
     (page: string) => {
-      if (role !== "Admin" && isAdminRoute(page) && !isStudentRoute(page)) {
+      if (role !== "Admin" && isAdminRoute(page) && !isStudentRoute(page) && !(role === "Faculty" && page === "Students")) {
         return;
       }
       setGlobalSearch("");
@@ -107,7 +110,7 @@ function App() {
     [role]
   );
 
-  const handleLogin = (loginRole: "Admin" | "Student") => {
+  const handleLogin = (loginRole: "Admin" | "Student" | "Faculty") => {
     localStorage.setItem("hostelRole", loginRole);
     localStorage.setItem("hostelUser", JSON.stringify(getStoredUser()));
     setRole(loginRole);
@@ -150,7 +153,7 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className={role === "Student" ? "app student-mode" : "app"}>
       <button
         type="button"
         className="sidebar-overlay"
@@ -160,49 +163,44 @@ function App() {
           setDrawerOpen(false);
         }}
       />
-      <MobileNav
-        role={role}
-        activePage={activePage}
-        setActivePage={goPage}
-        onLogout={handleLogout}
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-  onOpen={() => setDrawerOpen(true)}
-      />
       <Sidebar
         activePage={activePage}
         setActivePage={goPage}
         onLogout={handleLogout}
-        role={role}
+        role={role as any}
       />
       <main className="main-content">
         <Navbar activePage={activePage} onSearch={handleSearch} onNavigate={goPage} />
-        {activePage === "Dashboard" && <Dashboard role={role!} onNavigate={goPage} />}
+        {activePage === "Dashboard" && <Dashboard role={role! as any} onNavigate={goPage} />}
         {activePage === "Profile" && <StudentProfile />}
-        {activePage === "Students" && <Students search={globalSearch} role={role} />}
-{activePage === "Staff" && <Staff search={globalSearch} role={role} />}
+        {activePage === "Students" && <Students search={globalSearch} role={role as any} />}
+{activePage === "Staff" && <Staff search={globalSearch} role={role as any} />}
 {activePage === "Chat" && <Chat />}
-        {activePage === "Rooms" && <Rooms search={globalSearch} role={role} />}
-        {activePage === "Fees" && <Fees search={globalSearch} role={role} />}
-        {activePage === "Complaints" && <Complaints search={globalSearch} role={role} />}
-        {activePage === "Mess" && <Mess search={globalSearch} role={role} />}
-        {activePage === "Notices" && <Notices role={role} />}
-        {activePage === "Facilities" && <Facilities role={role} />}
+        {activePage === "Rooms" && <Rooms search={globalSearch} role={role as any} />}
+        {activePage === "Fees" && <Fees search={globalSearch} role={role as any} />}
+        {activePage === "Complaints" && <Complaints search={globalSearch} role={role as any} />}
+        {activePage === "Mess" && <Mess search={globalSearch} role={role as any} />}
+        {activePage === "Notices" && <Notices role={role as any} />}
+        {activePage === "Facilities" && <Facilities role={role as any} />}
+{activePage === "Attendance" && <Attendance />}
+{activePage === "Assignments" && <Assignments />}
+{activePage === "Timetable" && <Timetable />}
+{activePage === "Faculty Reports" && <FacultyReports />}
 {activePage === "Faculty Rooms" && <FacultyRooms />}
         {activePage === "Reports" && <Reports />}
         {activePage === "Settings" && <Settings />}
-        {activePage === "Emergency Contacts" && <EmergencyContacts />}
-        {activePage === "Medical Facilities" && <MedicalFacilities />}
-        {activePage === "WiFi Information" && <WifiInfo />}
-        {activePage === "Laundry Services" && <LaundryServices />}
-        {activePage === "Study Room" && <StudyRoom />}
-        {activePage === "Water & Electricity" && <WaterElectricity />}
-        {activePage === "Housekeeping" && <Housekeeping />}
-        {activePage === "Entry & Exit Rules" && <EntryExitRules />}
-        {activePage === "Maintenance Request" && <MaintenanceRequest role={role!} />}
-        {activePage === "Leave Management" && <LeaveManagement role={role!} />}
-        {activePage === "Mess Photos" && <MessPhotos role={role!} />}
-        {activePage === "Gym Photos" && <GymPhotos />}
+        {activePage === "Emergency Contacts" && <EmergencyContacts role={role as any} />}
+        {activePage === "Medical Facilities" && <MedicalFacilities role={role as any} />}
+        {activePage === "WiFi Information" && <WifiInfo role={role as any} />}
+        {activePage === "Laundry Services" && <LaundryServices role={role as any} />}
+        {activePage === "Study Room" && <StudyRoom role={role as any} />}
+        {activePage === "Water & Electricity" && <WaterElectricity role={role as any} />}
+        {activePage === "Housekeeping" && <Housekeeping role={role as any} />}
+        {activePage === "Entry & Exit Rules" && <EntryExitRules role={role as any} />}
+        {activePage === "Maintenance Request" && <MaintenanceRequest role={role! as any} />}
+        {activePage === "Leave Management" && <LeaveManagement role={role! as any} />}
+        {activePage === "Mess Photos" && <MessPhotos role={role! as any} />}
+        {activePage === "Gym Photos" && <GymPhotos role={role as any} />}
         {activePage === "Room Issue Photos" && <RoomIssuePhotos />}
       </main>
     </div>

@@ -135,7 +135,7 @@ function Staff({ search, role }: { search: string; role: "Admin" | "Student" | n
   const departments = Array.from(new Set(rows.map((r) => r.department).filter(Boolean))) as string[];
 
   return (
-    <section className="content">
+    <section className="content premium-page">
       <div className="page-heading students-heading">
         <div>
           <h2>Staff Management</h2>
@@ -277,4 +277,5 @@ function Staff({ search, role }: { search: string; role: "Admin" | "Student" | n
 }
 
 export default Staff;
+
 
