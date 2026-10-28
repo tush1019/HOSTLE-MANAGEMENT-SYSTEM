@@ -79,11 +79,6 @@ const ADMIN_ITEMS: DrawerItem[] = [
 
 const FACULTY_ITEMS: DrawerItem[] = [
   { route: "Dashboard", label: "Faculty Overview", icon: LayoutDashboard, roles: ["Faculty"], group: "overview" },
-{ route: "Attendance", label: "Attendance", icon: Calendar, roles: ["Faculty"], group: "records" },
-  { route: "Assignments", label: "Assignments", icon: Calendar, roles: ["Faculty"], group: "records" },
-  { route: "Timetable", label: "Timetable", icon: Calendar, roles: ["Faculty"], group: "records" },
-  { route: "Faculty Reports", label: "Reports", icon: BarChart3, roles: ["Faculty"], group: "reports" },
-
   { route: "Students", label: "Student Directory", icon: Users, roles: ["Faculty"], group: "records" },
   { route: "Faculty Rooms", label: "Faculty Rooms", icon: BedDouble, roles: ["Faculty"], group: "accommodation" },
   { route: "Notices", label: "Notices & Announcements", icon: Bell, roles: ["Faculty"], group: "communication" },
