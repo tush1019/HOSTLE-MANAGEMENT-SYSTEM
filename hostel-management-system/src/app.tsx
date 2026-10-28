@@ -20,8 +20,6 @@ import Notices from "./pages/Notices";
 import Reports from "./pages/Reports";
 import Facilities from "./pages/Facilities";
 import Attendance from "./pages/Attendance";
-import Assignments from "./pages/Assignments";
-import Timetable from "./pages/Timetable";
 import FacultyReports from "./pages/FacultyReports";
 import FacultyRooms from "./pages/FacultyRooms";
 import Settings from "./pages/Settings";
@@ -54,6 +52,13 @@ const STUDENT_ROUTES = new Set([
   "Study Room", "Gym Photos", "Facilities", "Entry & Exit Rules",
   "Medical Facilities", "WiFi Information", "Notices", "Laundry Services",
   "Mess Photos", "Room Issue Photos", "Settings", "Chat",
+]);
+const FACULTY_HOSTEL_ROUTES = new Set([
+  "Rooms", "Faculty Rooms", "Water & Electricity", "Housekeeping", "Mess",
+  "Complaints", "Maintenance Request", "Leave Management", "Study Room",
+  "Gym Photos", "Facilities", "Entry & Exit Rules", "Medical Facilities",
+  "WiFi Information", "Laundry Services", "Mess Photos", "Room Issue Photos",
+  "Notices", "Chat", "Settings", "Dashboard",
 ]);
 function isAdminRoute(page: string): boolean { return ADMIN_ONLY_ROUTES.has(page); }
 function isStudentRoute(page: string): boolean { return STUDENT_ROUTES.has(page); }
@@ -99,7 +104,7 @@ function App() {
 
   const goPage = useCallback(
     (page: string) => {
-      if (role !== "Admin" && isAdminRoute(page) && !isStudentRoute(page) && !(role === "Faculty" && page === "Students")) {
+      if (role !== "Admin" && isAdminRoute(page) && !isStudentRoute(page) && !(role === "Faculty" && (page === "Students" || FACULTY_HOSTEL_ROUTES.has(page)))) {
         return;
       }
       setGlobalSearch("");
@@ -183,8 +188,6 @@ function App() {
         {activePage === "Notices" && <Notices role={role as any} />}
         {activePage === "Facilities" && <Facilities role={role as any} />}
 {activePage === "Attendance" && <Attendance />}
-{activePage === "Assignments" && <Assignments />}
-{activePage === "Timetable" && <Timetable />}
 {activePage === "Faculty Reports" && <FacultyReports />}
 {activePage === "Faculty Rooms" && <FacultyRooms />}
         {activePage === "Reports" && <Reports />}
