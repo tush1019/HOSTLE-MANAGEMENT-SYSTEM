@@ -13,7 +13,13 @@ const FACULTY_SIGNUP_KEY = process.env.FACULTY_SIGNUP_KEY;
 // Demo OTP is only for local development/demo. It must never be enabled in
 // production, where OTPs must only be delivered by the configured provider.
 function isDemoOtpEnabled() {
-  return process.env.DEMO_OTP_ENABLED === "true" && process.env.NODE_ENV !== "production";
+  // Demo OTP exposes the verification code in the API response.
+  // It is disabled by default and must be explicitly enabled.
+  // In production, ALLOW_DEV_OTP must also be "true" to override the
+  // NODE_ENV guard (intended only for controlled demo/teacher deployments).
+  if (process.env.DEMO_OTP_ENABLED !== "true") return false;
+  if (process.env.NODE_ENV === "production" && process.env.ALLOW_DEV_OTP !== "true") return false;
+  return true;
 }
 
 const router = express.Router();
