@@ -7,6 +7,10 @@ const { signToken, authMiddleware, requireRole } = require("./middleware/auth");
 
 /* Admin passkey — env override or built-in default (6 digits).
    NEVER change this default in source; set ADMIN_PASSKEY in .env instead. */
+if (process.env.TEST_MODE === "true" && process.env.NODE_ENV === "production") {
+  throw new Error("TEST_MODE cannot be enabled in production");
+}
+
 const ADMIN_PASSKEY = process.env.ADMIN_PASSKEY || "484951";
 const FACULTY_SIGNUP_KEY = process.env.FACULTY_SIGNUP_KEY;
 
@@ -25,9 +29,13 @@ function isDemoOtpEnabled() {
 const router = express.Router();
 
 /* Stricter rate limit for auth endpoints: 20 requests / 15 min per IP. */
+const AUTH_RATE_LIMIT = process.env.NODE_ENV === "production"
+  ? 20
+  : (process.env.AUTH_RATE_LIMIT ? parseInt(process.env.AUTH_RATE_LIMIT, 10) : 20);
+
 const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  limit: 20,
+  limit: Number.isFinite(AUTH_RATE_LIMIT) && AUTH_RATE_LIMIT > 0 ? AUTH_RATE_LIMIT : 20,
   standardHeaders: "draft-7",
   legacyHeaders: false,
   validate: { xForwardedForHeader: false },
@@ -250,7 +258,8 @@ router.post("/register", authRateLimit, async (req, res) => {
       ...(demoOtp ? { demoOtp, devOtp: demoOtp } : {}),
     });
   } catch (error) {
-    console.error("Register Error:", error.message);
+    console.error("Register Error:", error && error.message ? error.message : error);
+    if (error && error.stack) console.error("Register Stack:", error.stack);
     res.status(500).json({ success: false, message: "Failed to start registration. Please try again." });
   }
 });
