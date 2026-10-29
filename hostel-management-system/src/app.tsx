@@ -80,6 +80,16 @@ function App() {
 
   useEffect(() => {
     const stored = localStorage.getItem("hostelRole");
+    const token = localStorage.getItem("hostelToken");
+    // JWT-only auth: a session without a verified token cannot access
+    // protected APIs. Clear stale legacy sessions cleanly instead of
+    // letting them fail with "Authentication required" on first request.
+    if (stored && !token) {
+      localStorage.removeItem("hostelRole");
+      localStorage.removeItem("hostelUser");
+      setRole(null);
+      return;
+    }
     setRole(stored === "Admin" || stored === "Student" || stored === "Faculty" ? stored : null);
   }, []);
 
@@ -129,6 +139,7 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem("hostelRole");
     localStorage.removeItem("hostelUser");
+    localStorage.removeItem("hostelToken");
     setRole(null);
     setActivePage("Dashboard");
     setPublicPage("Home");
