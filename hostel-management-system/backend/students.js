@@ -5,13 +5,21 @@ const { authMiddleware, requireRole } = require("./middleware/auth");
 const router = express.Router();
 
 const adminOnly = [authMiddleware, requireRole("Admin")];
-const readAccess = [authMiddleware, requireRole("Admin", "Faculty")];
+const readAccess = [authMiddleware, requireRole("Admin", "Faculty", "Student")];
 
 /* GET /api/students?search= */
 router.get("/", readAccess, async (req, res) => {
   try {
-    const search = (req.query.search || "").trim();
-    const email = (req.query.email || "").trim();
+    const isAdmin = req.user.role === "Admin";
+    const isFaculty = req.user.role === "Faculty";
+    const isStudent = req.user.role === "Student";
+    const search = isStudent ? "" : (req.query.search || "").trim();
+    let email = (req.query.email || "").trim();
+    if (isStudent) {
+      // Students may only look up their own record.
+      const [urows] = await db.query(`SELECT email FROM users WHERE id = ? LIMIT 1`, [req.user.id]);
+      email = (urows && urows.length && urows[0].email) ? urows[0].email : req.user.email;
+    }
 
     let sql = `SELECT id, student_code AS studentCode, name, email, phone,
                  course, room_number AS room, status, created_at AS createdAt
