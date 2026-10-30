@@ -27,6 +27,17 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   address VARCHAR(255) NULL,
   profile_photo MEDIUMTEXT NULL,
   cover_photo MEDIUMTEXT NULL,
+  mobile VARCHAR(30) NULL,
+  parent_guardian_name VARCHAR(100) NULL,
+  parent_guardian_mobile VARCHAR(30) NULL,
+  course VARCHAR(100) NULL,
+  year_semester VARCHAR(30) NULL,
+  hostel VARCHAR(50) NULL,
+  block VARCHAR(50) NULL,
+  room_number VARCHAR(20) NULL,
+  department VARCHAR(100) NULL,
+  designation VARCHAR(100) NULL,
+  emergency_contact VARCHAR(30) NULL,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -38,6 +49,7 @@ CREATE TABLE IF NOT EXISTS otp_verifications (
   name VARCHAR(100) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('Admin', 'Student', 'Faculty') NOT NULL DEFAULT 'Student',
+  profile_data TEXT NULL,
   attempts TINYINT NOT NULL DEFAULT 0,
   resend_count TINYINT NOT NULL DEFAULT 1,
   last_sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -114,6 +126,7 @@ CREATE TABLE IF NOT EXISTS rooms (
 CREATE TABLE IF NOT EXISTS fees (
   id INT AUTO_INCREMENT PRIMARY KEY,
   payment_code VARCHAR(20) UNIQUE,
+  user_id INT NULL,
   student_name VARCHAR(100) NOT NULL,
   room_number VARCHAR(10) NULL,
   amount DECIMAL(10, 2) NOT NULL,
@@ -144,6 +157,7 @@ CREATE TABLE IF NOT EXISTS facilities (
 CREATE TABLE IF NOT EXISTS complaints (
   id INT AUTO_INCREMENT PRIMARY KEY,
   complaint_code VARCHAR(20) UNIQUE,
+  user_id INT NULL,
   student_name VARCHAR(100) NOT NULL,
   room_number VARCHAR(10) NULL,
   subject VARCHAR(200) NOT NULL,
@@ -246,6 +260,7 @@ CREATE TABLE IF NOT EXISTS hostel_services (
 CREATE TABLE IF NOT EXISTS maintenance_requests (
   id INT AUTO_INCREMENT PRIMARY KEY,
   request_code VARCHAR(20) UNIQUE,
+  user_id INT NULL,
   student_name VARCHAR(100) NOT NULL,
   room_number VARCHAR(10) NULL,
   title VARCHAR(200) NOT NULL,
@@ -260,6 +275,7 @@ CREATE TABLE IF NOT EXISTS maintenance_requests (
 CREATE TABLE IF NOT EXISTS leave_requests (
   id INT AUTO_INCREMENT PRIMARY KEY,
   leave_code VARCHAR(20) UNIQUE,
+  user_id INT NULL,
   student_name VARCHAR(100) NOT NULL,
   room_number VARCHAR(10) NULL,
   reason VARCHAR(500) NOT NULL,
@@ -308,7 +324,19 @@ ALTER TABLE users ADD COLUMN admin_id VARCHAR(20) UNIQUE;
 -- Update existing admins that lack an admin ID
 UPDATE users SET admin_id = CONCAT('ADM', LPAD(id, 4, '0')) WHERE role = 'Admin' AND (admin_id IS NULL OR admin_id = '');
 
--- Campus gallery (published campus photographs managed by admins)
+
+-- Notifications (persistent in-app notification center)
+CREATE TABLE IF NOT EXISTS notifications (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INT NOT NULL,
+  type VARCHAR(50) NOT NULL DEFAULT 'info',
+  title VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  related_type VARCHAR(50) NULL,
+  related_id INT NULL,
+  is_read TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE IF NOT EXISTS campus_gallery (
   id INT AUTO_INCREMENT PRIMARY KEY,
   title VARCHAR(200) NOT NULL,

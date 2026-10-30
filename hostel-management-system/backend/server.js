@@ -51,7 +51,24 @@ const facultyRoutes = require("./faculty");
 const facultyRoomRoutes = require("./faculty_rooms");
 const staffRoutes = require("./staff");
 const chatRoutes = require("./chat");
+const notificationRoutes = require("./notifications");
 const hostelEntryExitRoutes = require("./hostel_entry_exit");
+
+/* Validate required production environment variables without exposing values. */
+if (process.env.NODE_ENV === "production") {
+  const required = ["JWT_SECRET", "JWT_EXPIRES"];
+  const missing = required.filter((k) => !process.env[k]);
+  if (missing.length) {
+    console.error("[startup] Missing required production environment variables:", missing.join(", "));
+    process.exit(1);
+  }
+}
+
+/* Prevent silent ephemeral SQLite usage for account storage in production. */
+if (process.env.NODE_ENV === "production" && !process.env.DB_HOST) {
+  console.error("[startup] DB_HOST is MISSING. Configure a persistent MySQL database (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME) in Render. Refusing to use ephemeral SQLite for account storage.");
+  process.exit(1);
+}
 
 const app = express();
 
@@ -148,6 +165,7 @@ app.use("/api/fees", feeRoutes);
 app.use("/api/complaints", complaintRoutes);
 app.use("/api/mess", messRoutes);
 app.use("/api/facilities", facilityRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/notices", noticeRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/services", serviceRoutes);

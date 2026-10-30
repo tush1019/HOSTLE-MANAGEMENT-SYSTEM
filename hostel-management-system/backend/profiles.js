@@ -17,8 +17,11 @@ const AVATAR_MAX_CHARS = 350000;
 const COVER_MAX_CHARS = 850000;
 const DATA_URL_RE = /^data:image\/(?:png|jpe?g|webp|gif);base64,[A-Za-z0-9+/]+={0,2}$/;
 
-const PROFILE_SELECT = `user_id AS userId, email, phone, bio, address,
+const PROFILE_SELECT = `user_id AS userId, email, phone, mobile, bio, address,
   profile_photo AS profilePhoto, cover_photo AS coverPhoto,
+  parent_guardian_name AS parentGuardianName, parent_guardian_mobile AS parentGuardianMobile,
+  course, year_semester AS yearSemester, hostel, block, room_number AS roomNumber,
+  department, designation, emergency_contact AS emergencyContact,
   updated_at AS updatedAt`;
 
 function cleanText(value, max) {
@@ -62,11 +65,22 @@ router.get("/me", authMiddleware, async (req, res) => {
     const email = req.user.email;
     const profile = await findProfile(userId, email);
     if (!profile) {
-      // ensure profile row exists
       await ensureProfile(userId, email);
     }
     const updated = await findProfile(userId, email);
-    res.json({ success: true, data: updated });
+    // Attach server-generated role IDs without exposing secrets.
+    let extra = {};
+    try {
+      const [urows] = await db.query(`SELECT admin_id, faculty_id, role FROM users WHERE id = ? LIMIT 1`, [userId]);
+      if (urows && urows.length) {
+        extra.role = urows[0].role;
+        extra.adminId = urows[0].admin_id;
+        extra.facultyId = urows[0].faculty_id;
+      }
+      const [srows] = await db.query(`SELECT student_code FROM students WHERE LOWER(email) = LOWER(?) LIMIT 1`, [email]);
+      if (srows && srows.length) extra.studentCode = srows[0].student_code;
+    } catch { /* ignore */ }
+    res.json({ success: true, data: { ...(updated || {}), ...extra } });
   } catch (error) {
     console.error("Profile get error:", error);
     res.status(500).json({ success: false, message: "Failed to load profile" });
@@ -79,17 +93,33 @@ router.put("/me/details", authMiddleware, async (req, res) => {
     const userId = req.user.id;
     const email = req.user.email;
     const phone = cleanText(req.body.phone, 30);
+    const mobile = cleanText(req.body.mobile, 30);
     const bio = cleanText(req.body.bio, 800);
     const address = cleanText(req.body.address, 200);
+    const parentGuardianName = cleanText(req.body.parentGuardianName, 100);
+    const parentGuardianMobile = cleanText(req.body.parentGuardianMobile, 30);
+    const course = cleanText(req.body.course, 100);
+    const yearSemester = cleanText(req.body.yearSemester, 30);
+    const emergencyContact = cleanText(req.body.emergencyContact, 30);
+    const role = req.user.role;
+    const hostel = role === "Student" ? null : cleanText(req.body.hostel, 50);
+    const block = role === "Student" ? null : cleanText(req.body.block, 50);
+    const roomNumber = role === "Student" ? null : cleanText(req.body.roomNumber, 20);
+    const department = cleanText(req.body.department, 100);
+    const designation = cleanText(req.body.designation, 100);
 
     const profile = await ensureProfile(userId, email);
     if (!profile) {
       return res.status(500).json({ success: false, message: "Could not prepare profile" });
     }
     await db.query(
-      `UPDATE user_profiles SET phone = ?, bio = ?, address = ?, updated_at = CURRENT_TIMESTAMP
+      `UPDATE user_profiles SET phone = ?, mobile = ?, bio = ?, address = ?,
+        parent_guardian_name = ?, parent_guardian_mobile = ?, course = ?, year_semester = ?,
+        emergency_contact = ?, hostel = COALESCE(?, hostel), block = COALESCE(?, block), room_number = COALESCE(?, room_number),
+        department = ?, designation = ?, updated_at = CURRENT_TIMESTAMP
        WHERE user_id = ?`,
-      [phone, bio, address, profile.userId]
+      [phone, mobile, bio, address, parentGuardianName, parentGuardianMobile, course, yearSemester,
+       emergencyContact, hostel, block, roomNumber, department, designation, profile.userId]
     );
     const updated = await findProfile(userId, email);
     res.json({ success: true, message: "Profile details saved", data: updated });

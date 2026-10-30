@@ -129,7 +129,7 @@ router.post("/login", authRateLimit, async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Login Error:", error.message);
+    console.error("Login Error:", error && error.code, error && error.message);
     res.status(500).json({ success: false, message: "Server error during login" });
   }
 });
@@ -153,6 +153,8 @@ router.post("/logout", authRateLimit, (req, res) => {
 router.post("/register", authRateLimit, async (req, res) => {
   try {
     const { name, email, password, role, passkey } = req.body;
+    const profileData = { ...req.body };
+    delete profileData.name; delete profileData.email; delete profileData.password; delete profileData.role; delete profileData.passkey;
 
     if (!name || !String(name).trim() || String(name).trim().length < 2) {
       return res.status(400).json({ success: false, message: "Full name is required" });
@@ -225,9 +227,9 @@ router.post("/register", authRateLimit, async (req, res) => {
     const expiresAt = otpExpiry();
 
     await db.query(
-      `INSERT INTO otp_verifications (email, otp_hash, name, password_hash, role, attempts, resend_count, last_sent_at, expires_at)
-       VALUES (?, ?, ?, ?, ?, 0, 1, CURRENT_TIMESTAMP, ?)`,
-      [cleanEmail, otpHash, cleanName, passwordHash, userRole, expiresAt]
+      `INSERT INTO otp_verifications (email, otp_hash, name, password_hash, role, profile_data, attempts, resend_count, last_sent_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, 0, 1, CURRENT_TIMESTAMP, ?)`,
+      [cleanEmail, otpHash, cleanName, passwordHash, userRole, JSON.stringify(profileData), expiresAt]
     );
 
     let emailSent = false;
@@ -353,7 +355,7 @@ router.post("/verify", authRateLimit, async (req, res) => {
     const code = String(otp).trim();
 
     const [rows] = await db.query(
-      "SELECT id, otp_hash, name, password_hash, role, attempts, expires_at FROM otp_verifications WHERE email = ? LIMIT 1",
+      "SELECT id, otp_hash, name, password_hash, role, profile_data, attempts, expires_at FROM otp_verifications WHERE email = ? LIMIT 1",
       [cleanEmail]
     );
     if (rows.length === 0) {
@@ -398,8 +400,35 @@ router.post("/verify", authRateLimit, async (req, res) => {
       const adminId = `ADM${String(userId).padStart(4, "0")}`;
       await run(`UPDATE users SET admin_id = ? WHERE id = ?`, [adminId, userId]);
     }
+    if (userRole === "Faculty") {
+      const facultyId = `FAC${String(userId).padStart(4, "0")}`;
+      await run(`UPDATE users SET faculty_id = ? WHERE id = ?`, [facultyId, userId]);
+    }
 
-    await run(`INSERT INTO user_profiles (user_id, email) VALUES (?, ?)`, [userId, cleanEmail]);
+    let profile = {};
+    try { profile = row.profile_data ? JSON.parse(row.profile_data) : {}; } catch { profile = {}; }
+
+    const profileCols = ["user_id", "email"];
+    const profileVals = [userId, cleanEmail];
+    const fieldMap = {
+      phone: "phone", mobile: "mobile",
+      parentGuardianName: "parent_guardian_name", parent_guardian_name: "parent_guardian_name",
+      parentGuardianMobile: "parent_guardian_mobile", parent_guardian_mobile: "parent_guardian_mobile",
+      course: "course", yearSemester: "year_semester", year_semester: "year_semester",
+      hostel: "hostel", block: "block", room: "room_number", room_number: "room_number",
+      department: "department", designation: "designation",
+      emergencyContact: "emergency_contact", emergency_contact: "emergency_contact",
+      address: "address", bio: "bio",
+    };
+    for (const [k, col] of Object.entries(fieldMap)) {
+      if (profile[k] !== undefined && profile[k] !== null && String(profile[k]).trim() !== "") {
+        if (!profileCols.includes(col)) { profileCols.push(col); profileVals.push(String(profile[k]).trim()); }
+      }
+    }
+    await run(
+      `INSERT INTO user_profiles (${profileCols.join(", ")}) VALUES (${profileCols.map(() => "?").join(", ")})`,
+      profileVals
+    );
 
     const studentCode = userRole === "Student" ? "STU" + String(userId).padStart(4, "0") : null;
     if (userRole === "Student") {
@@ -435,7 +464,7 @@ router.post("/verify", authRateLimit, async (req, res) => {
     if (connection) {
       try { await connection.rollback(); } catch { /* ignore */ }
     }
-    console.error("Verify Error:", error.message);
+    console.error("Verify Error:", error && error.code, error && error.message);
     res.status(500).json({ success: false, message: "Failed to create account. Please try again." });
   } finally {
     if (connection) connection.release();

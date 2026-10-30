@@ -68,6 +68,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [passkey, setPasskey] = useState("");
   const [devOtp, setDevOtp] = useState<string | null>(null);
+  const [extra, setExtra] = useState<Record<string, string>>({});
   const strength = strengthOf(password);
 
   /* Guard: validate OTP is exactly 6 digits before comparing with backend */
@@ -103,6 +104,7 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
           password,
           role,
           ...(role === "Admin" || role === "Faculty" ? { passkey } : {}),
+          profile: extra,
         }
       );
       setCreatedName(data.user?.name || name.trim());
@@ -227,6 +229,35 @@ function Signup({ onSignup, onLogin, onBackHome }: SignupProps) {
                     onChange={(e) => { setConfirm(e.target.value); setError(""); }} />
                 </div>
               </div>
+              {role === "Student" && (
+                <>
+                  <div className="signup-field"><label>Mobile Number</label><div className="signup-input-wrapper"><input placeholder="10-digit mobile" value={extra.mobile || ""} onChange={(e) => setExtra({ ...extra, mobile: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Parent/Guardian Name</label><div className="signup-input-wrapper"><input placeholder="Parent/Guardian full name" value={extra.parentGuardianName || ""} onChange={(e) => setExtra({ ...extra, parentGuardianName: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Parent Mobile</label><div className="signup-input-wrapper"><input placeholder="Parent mobile" value={extra.parentGuardianMobile || ""} onChange={(e) => setExtra({ ...extra, parentGuardianMobile: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Course</label><div className="signup-input-wrapper"><input placeholder="e.g. B.Tech CSE" value={extra.course || ""} onChange={(e) => setExtra({ ...extra, course: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Year/Semester</label><div className="signup-input-wrapper"><input placeholder="e.g. 2nd Year / 3rd Sem" value={extra.yearSemester || ""} onChange={(e) => setExtra({ ...extra, yearSemester: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Address</label><div className="signup-input-wrapper"><input placeholder="Residential address" value={extra.address || ""} onChange={(e) => setExtra({ ...extra, address: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Emergency Contact</label><div className="signup-input-wrapper"><input placeholder="Emergency contact number" value={extra.emergencyContact || ""} onChange={(e) => setExtra({ ...extra, emergencyContact: e.target.value })} /></div></div>
+                </>
+              )}
+              {role === "Faculty" && (
+                <>
+                  <div className="signup-field"><label>Mobile Number</label><div className="signup-input-wrapper"><input placeholder="10-digit mobile" value={extra.mobile || ""} onChange={(e) => setExtra({ ...extra, mobile: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Department</label><div className="signup-input-wrapper"><input placeholder="Department" value={extra.department || ""} onChange={(e) => setExtra({ ...extra, department: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Designation</label><div className="signup-input-wrapper"><input placeholder="Designation" value={extra.designation || ""} onChange={(e) => setExtra({ ...extra, designation: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Assigned Hostel/Block</label><div className="signup-input-wrapper"><input placeholder="Hostel/Block" value={extra.hostel || ""} onChange={(e) => setExtra({ ...extra, hostel: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Address</label><div className="signup-input-wrapper"><input placeholder="Residential address" value={extra.address || ""} onChange={(e) => setExtra({ ...extra, address: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Emergency Contact</label><div className="signup-input-wrapper"><input placeholder="Emergency contact number" value={extra.emergencyContact || ""} onChange={(e) => setExtra({ ...extra, emergencyContact: e.target.value })} /></div></div>
+                </>
+              )}
+              {role === "Admin" && (
+                <>
+                  <div className="signup-field"><label>Mobile Number</label><div className="signup-input-wrapper"><input placeholder="10-digit mobile" value={extra.mobile || ""} onChange={(e) => setExtra({ ...extra, mobile: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Designation</label><div className="signup-input-wrapper"><input placeholder="Designation" value={extra.designation || ""} onChange={(e) => setExtra({ ...extra, designation: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Address</label><div className="signup-input-wrapper"><input placeholder="Residential address" value={extra.address || ""} onChange={(e) => setExtra({ ...extra, address: e.target.value })} /></div></div>
+                  <div className="signup-field"><label>Emergency Contact</label><div className="signup-input-wrapper"><input placeholder="Emergency contact number" value={extra.emergencyContact || ""} onChange={(e) => setExtra({ ...extra, emergencyContact: e.target.value })} /></div></div>
+                </>
+              )}
               {(role === "Admin" || role === "Faculty") && (
                 <div className="signup-field">
                   <label>{role === "Admin" ? "Admin Passkey" : "Faculty Pass Key"}</label>

@@ -59,6 +59,7 @@ const STUDENT_ITEMS: DrawerItem[] = [
 
 const ADMIN_ITEMS: DrawerItem[] = [
   { route: "Dashboard", label: "Admin Overview", icon: LayoutDashboard, roles: ["Admin"], group: "overview" },
+  { route: "Admin Profile", label: "My Profile", icon: UserCircle, roles: ["Admin"], group: "profile" },
   { route: "Students", label: "Student Management", icon: Users, roles: ["Admin"], group: "records" },
   { route: "Staff", label: "Staff Management", icon: Users, roles: ["Admin"], group: "records" },
   { route: "Rooms", label: "Room Management", icon: BedDouble, roles: ["Admin"], group: "accommodation" },
@@ -81,6 +82,7 @@ const ADMIN_ITEMS: DrawerItem[] = [
 
 const FACULTY_ITEMS: DrawerItem[] = [
   { route: "Dashboard", label: "Faculty Overview", icon: LayoutDashboard, roles: ["Faculty"], group: "overview" },
+  { route: "Faculty Profile", label: "My Profile", icon: UserCircle, roles: ["Faculty"], group: "profile" },
   { route: "Attendance", label: "Class Attendance", icon: Calendar, roles: ["Faculty"], group: "records" },
   { route: "Students", label: "Student Directory", icon: Users, roles: ["Faculty"], group: "records" },
   { route: "Rooms", label: "Room Management", icon: BedDouble, roles: ["Faculty"], group: "accommodation" },
@@ -180,6 +182,9 @@ function Sidebar({ activePage, setActivePage, onLogout, role }: SidebarProps) {
         })}
       </nav>
       <div className="sidebar-bottom">
+        <div className="sidebar-credit" style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", textAlign: "center", marginBottom: 8 }}>
+          Designed & Developed by TUSHAR CHAUDHARY
+        </div>
         <button type="button" className="logout-btn" onClick={logout}>
           <LogOut size={18} />
           <span>Logout</span>

@@ -38,6 +38,8 @@ import GymPhotos from "./pages/GymPhotos";
 import RoomIssuePhotos from "./pages/RoomIssuePhotos";
 import HostelEntryExit from "./pages/HostelEntryExit";
 import StudentProfile from "./pages/StudentProfile";
+import FacultyProfile from "./pages/FacultyProfile";
+import AdminProfile from "./pages/AdminProfile";
 import StudentAttendance from "./pages/StudentAttendance";
 
 type Role = "Admin" | "Student" | "Faculty" | null;
@@ -192,6 +194,8 @@ function App() {
         <Navbar activePage={activePage} onSearch={handleSearch} onNavigate={goPage} />
         {activePage === "Dashboard" && <Dashboard role={role! as any} onNavigate={goPage} />}
         {activePage === "Profile" && <StudentProfile />}
+{activePage === "Faculty Profile" && <FacultyProfile />}
+{activePage === "Admin Profile" && <AdminProfile />}
 {activePage === "My Attendance" && <StudentAttendance role={role} />}
         {activePage === "Students" && <Students search={globalSearch} role={role as any} />}
 {activePage === "Staff" && <Staff search={globalSearch} role={role as any} />}

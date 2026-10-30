@@ -14,10 +14,21 @@ type Profile = {
   userId: number;
   email: string;
   phone: string | null;
+  mobile: string | null;
   bio: string | null;
   address: string | null;
   profilePhoto: string | null;
   coverPhoto: string | null;
+  parentGuardianName: string | null;
+  parentGuardianMobile: string | null;
+  course: string | null;
+  yearSemester: string | null;
+  hostel: string | null;
+  block: string | null;
+  roomNumber: string | null;
+  department: string | null;
+  designation: string | null;
+  emergencyContact: string | null;
   updatedAt: string | null;
 };
 
@@ -71,7 +82,7 @@ function StudentProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [student, setStudent] = useState<StudentRec | null>(null);
   const [room, setRoom] = useState<RoomRec | null>(null);
-  const [form, setForm] = useState({ phone: "", bio: "", address: "" });
+  const [form, setForm] = useState({ phone: "", bio: "", address: "", mobile: "", parentGuardianName: "", parentGuardianMobile: "", course: "", yearSemester: "", emergencyContact: "", hostel: "", block: "", roomNumber: "" });
   const [savingDetails, setSavingDetails] = useState(false);
   const [uploading, setUploading] = useState<"" | "avatar" | "cover">("");
   const [viewer, setViewer] = useState<{ src: string; title: string } | null>(null);
@@ -96,6 +107,15 @@ function StudentProfile() {
         phone: prof?.phone ?? "",
         bio: prof?.bio ?? "",
         address: prof?.address ?? "",
+        mobile: prof?.mobile ?? "",
+        parentGuardianName: prof?.parentGuardianName ?? "",
+        parentGuardianMobile: prof?.parentGuardianMobile ?? "",
+        course: prof?.course ?? "",
+        yearSemester: prof?.yearSemester ?? "",
+        emergencyContact: prof?.emergencyContact ?? "",
+        hostel: prof?.hostel ?? "",
+        block: prof?.block ?? "",
+        roomNumber: prof?.roomNumber ?? "",
       });
       const rec = Array.isArray(students) && students.length ? students[0] : null;
       setStudent(rec);
@@ -243,6 +263,15 @@ function StudentProfile() {
 
   return (
     <section className="content premium-page sp-page sp-premium">
+      <div className="premium-hero">
+        <div className="eyebrow">Student Profile</div>
+        <h2>{displayName}</h2>
+        <p>{user.email}</p>
+        <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+          {student?.studentCode && <span className="hero-badge">{student.studentCode}</span>}
+          <span className="hero-badge">{student?.status || "Student"}</span>
+        </div>
+      </div>
       <div className="sp-header">
         <div className={`sp-cover${cover ? "" : " sp-cover-empty"}`}>
           {cover ? (
@@ -339,7 +368,45 @@ function StudentProfile() {
               />
             </div>
             <div className="hub-field">
+              <label>Mobile Number</label>
+              <input value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} placeholder="Mobile number" />
+            </div>
+            <div className="hub-field">
+              <label>Parent/Guardian Name</label>
+              <input value={form.parentGuardianName} onChange={(e) => setForm({ ...form, parentGuardianName: e.target.value })} placeholder="Parent/Guardian name" />
+            </div>
+            <div className="hub-field">
+              <label>Parent Mobile</label>
+              <input value={form.parentGuardianMobile} onChange={(e) => setForm({ ...form, parentGuardianMobile: e.target.value })} placeholder="Parent mobile" />
+            </div>
+            <div className="hub-field">
+              <label>Course</label>
+              <input value={form.course} onChange={(e) => setForm({ ...form, course: e.target.value })} placeholder="Course" />
+            </div>
+            <div className="hub-field">
+              <label>Year/Semester</label>
+              <input value={form.yearSemester} onChange={(e) => setForm({ ...form, yearSemester: e.target.value })} placeholder="Year/Semester" />
+            </div>
+            <div className="hub-field">
+              <label>Emergency Contact</label>
+              <input value={form.emergencyContact} onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })} placeholder="Emergency contact" />
+            </div>
+            <div className="hub-field">
               <label>Address</label>
+              <input value={form.address} maxLength={200} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Home address" />
+            </div>
+            <div className="hub-field">
+              <label>Hostel (read-only)</label>
+              <input value={form.hostel} readOnly />
+            </div>
+            <div className="hub-field">
+              <label>Block (read-only)</label>
+              <input value={form.block} readOnly />
+            </div>
+            <div className="hub-field">
+              <label>Room Number (read-only)</label>
+              <input value={form.roomNumber} readOnly />
+            </div>
               <input
                 value={form.address}
                 maxLength={200}
@@ -510,7 +577,6 @@ function StudentProfile() {
             </>
           )}
         </div>
-      </div>
 
       {viewer && (
         <Modal title={viewer.title} subtitle="Room photo" onClose={() => setViewer(null)}>

@@ -89,6 +89,10 @@ async function createSqliteFallback() {
   const db = new Database();
   ensureSqliteSchema(db);
   try { db.run(`ALTER TABLE users ADD COLUMN admin_id TEXT`); } catch (e) { /* column may already exist */ }
+  try { db.run(`ALTER TABLE users ADD COLUMN faculty_id TEXT`); } catch (e) { /* column may already exist */ }
+  for (const t of ["leave_requests", "complaints", "maintenance_requests"]) {
+    try { db.run(`ALTER TABLE ${t} ADD COLUMN user_id INTEGER`); } catch (e) { /* column may already exist */ }
+  }
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -110,6 +114,7 @@ async function createSqliteFallback() {
       name TEXT NOT NULL,
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'Student' CHECK (role IN ('Admin', 'Student', 'Faculty')),
+      profile_data TEXT NULL,
       attempts INTEGER NOT NULL DEFAULT 0,
       resend_count INTEGER NOT NULL DEFAULT 1,
       last_sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -174,9 +179,16 @@ async function createSqliteFallback() {
     );
   `);
 
+  for (const col of [
+    "mobile TEXT", "parent_guardian_name TEXT", "parent_guardian_mobile TEXT",
+    "course TEXT", "year_semester TEXT", "hostel TEXT", "block TEXT",
+    "room_number TEXT", "department TEXT", "designation TEXT", "emergency_contact TEXT",
+  ]) {
+    try { db.run(`ALTER TABLE user_profiles ADD COLUMN ${col}`); } catch (e) { /* exists */ }
+  }
+
   db.run(`
     CREATE TABLE IF NOT EXISTS rooms (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
       room_number TEXT NOT NULL UNIQUE,
       floor TEXT NOT NULL DEFAULT 'Ground Floor',
       type TEXT NOT NULL DEFAULT '2 Seater',
@@ -473,6 +485,93 @@ async function ensureUserProfileTable(pool) {
   }
 }
 
+/* Ensure extended profile columns exist on user_profiles (MySQL, safe to re-run). */
+async function ensureExtendedProfileColumns(pool) {
+  const cols = [
+    "mobile VARCHAR(30) NULL",
+    "parent_guardian_name VARCHAR(100) NULL",
+    "parent_guardian_mobile VARCHAR(30) NULL",
+    "course VARCHAR(100) NULL",
+    "year_semester VARCHAR(30) NULL",
+    "hostel VARCHAR(50) NULL",
+    "block VARCHAR(50) NULL",
+    "room_number VARCHAR(20) NULL",
+    "department VARCHAR(100) NULL",
+    "designation VARCHAR(100) NULL",
+    "emergency_contact VARCHAR(30) NULL",
+  ];
+  try {
+    const [rows] = await pool.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'user_profiles'`
+    );
+    const have = new Set((rows || []).map((r) => String(r.COLUMN_NAME || Object.values(r)[0]).toLowerCase()));
+    for (const colDef of cols) {
+      const colName = colDef.split(" ")[0].toLowerCase();
+      if (!have.has(colName)) {
+        try {
+          await pool.query(`ALTER TABLE user_profiles ADD COLUMN ${colDef}`);
+          console.log(`[db] Migrated: added user_profiles.${colName}`);
+        } catch (e) {
+          console.warn(`user_profiles.${colName} migration skipped:`, e.message);
+        }
+      }
+    }
+  } catch (error) {
+    console.warn("extended profile columns migration skipped:", error.message);
+  }
+}
+
+/* Ensure profile_data column exists on otp_verifications (MySQL, safe to re-run). */
+async function ensureOtpProfileDataColumn(pool) {
+  try {
+    const [rows] = await pool.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'otp_verifications' AND COLUMN_NAME = 'profile_data'`
+    );
+    if (!rows || !rows.length) {
+      await pool.query(`ALTER TABLE otp_verifications ADD COLUMN profile_data TEXT NULL`);
+      console.log("[db] Migrated: added otp_verifications.profile_data");
+    }
+  } catch (error) {
+    console.warn("otp profile_data migration skipped:", error.message);
+  }
+}
+
+async function ensureUserIdColumn(pool, table) {
+  try {
+    const [rows] = await pool.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'user_id'`,
+      [table]
+    );
+    if (!rows || !rows.length) {
+      await pool.query(`ALTER TABLE ${table} ADD COLUMN user_id INT NULL`);
+      console.log(`[db] Migrated: added ${table}.user_id`);
+    }
+  } catch (error) {
+    console.warn(`${table}.user_id migration skipped:`, error.message);
+  }
+}
+
+/* Ensure notifications table exists on MySQL (safe, runs once per boot). */
+async function ensureNotificationsTable(pool) {
+  try {
+    await pool.query(`CREATE TABLE IF NOT EXISTS notifications (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NOT NULL,
+      type VARCHAR(50) NOT NULL DEFAULT 'info',
+      title VARCHAR(255) NOT NULL,
+      message TEXT NOT NULL,
+      related_type VARCHAR(50) NULL,
+      related_id INT NULL,
+      is_read TINYINT(1) NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_notifications_user (user_id)
+    )`);
+    console.log("[db] Verified table: notifications");
+  } catch (error) {
+    console.warn("notifications table migration skipped:", error.message);
+  }
+}
+
 /* Add admin_id column to users (MySQL, safe to re-run). */
 async function ensureAdminIdColumn(pool) {
   try {
@@ -497,7 +596,25 @@ async function ensureAdminIdColumn(pool) {
   }
 }
 
-/* Campus gallery table (MySQL, safe to re-run). */
+/* Add faculty_id column to users (MySQL, safe to re-run). */
+async function ensureFacultyIdColumn(pool) {
+  try {
+    const [rows] = await pool.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'users'`
+    );
+    const have = new Set((rows || []).map((r) => String(r.COLUMN_NAME || Object.values(r)[0]).toLowerCase()));
+    if (!have.has("faculty_id")) {
+      await pool.query(`ALTER TABLE users ADD COLUMN faculty_id VARCHAR(20) UNIQUE`);
+      console.log("[db] Migrated: added users.faculty_id");
+    }
+    await pool.query(
+      `UPDATE users SET faculty_id = CONCAT('FAC', LPAD(id, 4, '0')) WHERE role = 'Faculty' AND (faculty_id IS NULL OR faculty_id = '')`
+    );
+  } catch (error) {
+    console.warn("faculty_id migration skipped:", error.message);
+  }
+}
+
 async function ensureCampusGalleryTable(pool) {
   try {
     await pool.query(`
@@ -702,7 +819,10 @@ async function getPool() {
     await mysqlPool.query("SELECT 1 AS connected");
     await ensurePremiumRoomColumns(mysqlPool);
     await ensureUserProfileTable(mysqlPool);
+    await ensureExtendedProfileColumns(mysqlPool);
+    await ensureOtpProfileDataColumn(mysqlPool);
     await ensureAdminIdColumn(mysqlPool);
+    await ensureFacultyIdColumn(mysqlPool);
     await ensureCampusGalleryTable(mysqlPool);
     await ensureAppSettingsTable(mysqlPool);
     await ensureUserPreferencesTable(mysqlPool);
@@ -710,6 +830,10 @@ async function getPool() {
     await ensureChatMessagesTable(mysqlPool);
     await ensureFacultyTables(mysqlPool);
     await ensureFacultyRoleEnum(mysqlPool);
+    await ensureNotificationsTable(mysqlPool);
+    await ensureUserIdColumn(mysqlPool, "leave_requests");
+    await ensureUserIdColumn(mysqlPool, "complaints");
+    await ensureUserIdColumn(mysqlPool, "maintenance_requests");
     console.log("[db] MySQL pool connected successfully");
     return mysqlPool;
   } catch (error) {
