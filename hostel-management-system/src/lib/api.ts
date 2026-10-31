@@ -24,6 +24,11 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     }
   }
 
+  if (response.status === 401) {
+    localStorage.removeItem("hostelToken");
+    localStorage.removeItem("hostelRole");
+    localStorage.removeItem("hostelUser");
+  }
   if (!response.ok || data?.success === false) {
     throw new Error(data?.message || `Request failed (${response.status})`);
   }
@@ -55,6 +60,11 @@ export async function apiRaw<T>(path: string, options: ApiOptions = {}): Promise
     }
   }
 
+  if (response.status === 401) {
+    localStorage.removeItem("hostelToken");
+    localStorage.removeItem("hostelRole");
+    localStorage.removeItem("hostelUser");
+  }
   if (!response.ok || data?.success === false) {
     throw new Error(data?.message || `Request failed (${response.status})`);
   }
