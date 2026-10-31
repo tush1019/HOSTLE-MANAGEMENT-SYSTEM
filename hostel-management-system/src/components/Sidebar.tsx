@@ -54,6 +54,7 @@ const STUDENT_ITEMS: DrawerItem[] = [
   { route: "Mess Photos", label: "Mess Photos", icon: Utensils, roles: ["Student"], group: "communication" },
   { route: "Room Issue Photos", label: "Room Issue Photos", icon: Image, roles: ["Student"], group: "communication" },
   { route: "Chat", label: "Chat with Admin", icon: MessageCircle, roles: ["Student"], group: "communication" },
+  { route: "My Fees", label: "My Fees", icon: CreditCard, roles: ["Student"], group: "finance" },
   { route: "Settings", label: "Settings", icon: Settings, roles: ["Student"], group: "settings" },
 ];
 
@@ -64,6 +65,7 @@ const ADMIN_ITEMS: DrawerItem[] = [
   { route: "Staff", label: "Staff Management", icon: Users, roles: ["Admin"], group: "records" },
   { route: "Rooms", label: "Room Management", icon: BedDouble, roles: ["Admin"], group: "accommodation" },
   { route: "Fees", label: "Fee Management", icon: CreditCard, roles: ["Admin"], group: "finance" },
+  { route: "Fee Management", label: "Fee Management (Premium)", icon: CreditCard, roles: ["Admin"], group: "finance" },
   { route: "Leave Management", label: "Leave Approvals", icon: Calendar, roles: ["Admin"], group: "requests" },
   { route: "Maintenance Request", label: "Maintenance Management", icon: Wrench, roles: ["Admin"], group: "requests" },
   { route: "Mess", label: "Mess Management", icon: Utensils, roles: ["Admin"], group: "dining" },

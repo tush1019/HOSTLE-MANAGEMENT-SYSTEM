@@ -14,6 +14,8 @@ import Chat from "./pages/Chat";
 
 import Rooms from "./pages/Room";
 import Fees from "./pages/Fees";
+import MyFees from "./pages/MyFees";
+import FeeManagement from "./pages/FeeManagement";
 import Complaints from "./pages/Complaints";
 import Mess from "./pages/Mess";
 import Notices from "./pages/Notices";
@@ -46,7 +48,7 @@ type Role = "Admin" | "Student" | "Faculty" | null;
 type PublicPage = "Home" | "Login" | "Signup";
 
 const ADMIN_ONLY_ROUTES = new Set([
-  "Students", "Staff", "Rooms", "Fees", "Reports", "Settings", "Campus Gallery", "Faculty Rooms",
+  "Students", "Staff", "Rooms", "Fees", "Fee Management", "Reports", "Settings", "Campus Gallery", "Faculty Rooms",
   "Leave Management", "Maintenance Request", "Mess", "Housekeeping",
   "Water & Electricity", "Notices", "Medical Facilities", "Study Room",
   "Hostel Entry/Exit",
@@ -56,7 +58,7 @@ const STUDENT_ROUTES = new Set([
   "Mess", "Complaints", "Leave Management", "Maintenance Request",
   "Study Room", "Gym Photos", "Facilities", "Entry & Exit Rules",
   "Medical Facilities", "WiFi Information", "Notices", "Laundry Services",
-  "Mess Photos", "Room Issue Photos", "Settings", "Chat",
+  "Mess Photos", "Room Issue Photos", "Settings", "Chat", "My Fees",
 ]);
 const FACULTY_HOSTEL_ROUTES = new Set([
   "Rooms", "Faculty Rooms", "Water & Electricity", "Housekeeping", "Mess",
@@ -202,6 +204,8 @@ function App() {
 {activePage === "Chat" && <Chat />}
         {activePage === "Rooms" && <Rooms search={globalSearch} role={role as any} />}
         {activePage === "Fees" && <Fees search={globalSearch} role={role as any} />}
+{activePage === "My Fees" && <MyFees />}
+{activePage === "Fee Management" && <FeeManagement />}
         {activePage === "Complaints" && <Complaints search={globalSearch} role={role as any} />}
         {activePage === "Mess" && <Mess search={globalSearch} role={role as any} />}
         {activePage === "Notices" && <Notices role={role as any} />}

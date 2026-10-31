@@ -53,6 +53,7 @@ const staffRoutes = require("./staff");
 const chatRoutes = require("./chat");
 const notificationRoutes = require("./notifications");
 const hostelEntryExitRoutes = require("./hostel_entry_exit");
+const feeManagementRoutes = require("./feeManagement");
 
 /* Validate required production environment variables without exposing values. */
 if (process.env.NODE_ENV === "production") {
@@ -185,6 +186,7 @@ app.use("/api/faculty-rooms", facultyRoomRoutes);
 app.use("/api/staff", staffRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/hostel-gate-logs", hostelEntryExitRoutes);
+app.use("/api/fee-management", feeManagementRoutes);
 
 // 404 for unknown API routes
 app.use("/api", (req, res) => {

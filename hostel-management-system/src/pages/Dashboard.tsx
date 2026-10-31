@@ -7,6 +7,7 @@ import {
 import { api, getStoredUser } from "../lib/api";
 import { formatINR } from "../lib/format";
 import "../dashboard-premium.css";
+import "../dashboard-student-faculty-premium.css";
 
 type D = {
   students: { total: number; active: number };
@@ -28,6 +29,32 @@ function Dashboard({ role, onNavigate }: { role: "Admin" | "Student" | "Faculty"
   const [err, setErr] = useState("");
   const [tasks, setTasks] = useState<TaskItem[] | null>(null);
   const [facultyData, setFacultyData] = useState<any>(null);
+const [studentStats, setStudentStats] = useState<any>({ leaves: 0, complaints: 0, maintenance: 0, feePending: 0, notices: [] });
+useEffect(() => {
+  if (role !== "Student") return;
+  const user = getStoredUser();
+  let cancelled = false;
+  (async () => {
+    try {
+      const [leaves, complaints, maints, notices, feeOv] = await Promise.all([
+        api<any[]>(`/leave?student=${encodeURIComponent(user?.name || "")}`).catch(() => []),
+        api<any[]>(`/complaints`).catch(() => []),
+        api<any[]>(`/maintenance?student=${encodeURIComponent(user?.name || "")}`).catch(() => []),
+        api<any[]>(`/notices`).catch(() => []),
+        api<any>(`/fee-management/my/overview`).catch(() => null),
+      ]);
+      if (cancelled) return;
+      setStudentStats({
+        leaves: (leaves || []).filter((l: any) => l.status === "Pending").length,
+        complaints: (complaints || []).filter((c: any) => c.status !== "Resolved").length,
+        maintenance: (maints || []).filter((m: any) => m.status !== "Resolved").length,
+        feePending: feeOv?.pending ?? 0,
+        notices: (notices || []).slice(0, 4),
+      });
+    } catch {}
+  })();
+  return () => { cancelled = true; };
+}, [role]);
   useEffect(() => {
     if (role !== "Faculty") return;
     let cancelled = false;
@@ -96,86 +123,84 @@ function Dashboard({ role, onNavigate }: { role: "Admin" | "Student" | "Faculty"
     const user = getStoredUser();
     const fd = facultyData?.data;
     return (
-      <section className="content premium-page premium-dashboard">
-        <div className="page-header">
-          <h1>Faculty Dashboard</h1>
-          <p>Welcome back, {user?.name || "Faculty"}. Live overview of your authorized faculty resources.</p>
+      <section className="content premium-page premium-dashboard faculty-dashboard-premium">
+        <div className="sd-hero">
+          <div>
+            <span className="sd-eyebrow">Faculty Panel</span>
+            <h1>Welcome back, {user?.name || "Faculty"}</h1>
+            <p>Live overview of your authorized faculty resources.</p>
+          </div>
+          <div className="sd-date">{new Date().toLocaleDateString()}</div>
         </div>
-        <div className="dashboard-grid">
-          <div className="dashboard-card">
-            <h3>Students</h3>
-            <p>{fd?.students?.active ?? 0} active of {fd?.students?.total ?? 0} total</p>
+        <div className="sd-stats">
+          <div className="sd-stat"><div className="sd-stat-icon">👥</div><div><span>Active Students</span><strong>{fd?.students?.active ?? 0}</strong></div></div>
+          <div className="sd-stat"><div className="sd-stat-icon">🏠</div><div><span>Available Rooms</span><strong>{fd?.rooms?.available ?? 0}</strong></div></div>
+          <div className="sd-stat"><div className="sd-stat-icon">⚠️</div><div><span>Pending Complaints</span><strong>{fd?.complaints?.pending ?? 0}</strong></div></div>
+          <div className="sd-stat"><div className="sd-stat-icon">🔧</div><div><span>Maintenance</span><strong>{fd?.maintenance?.pending ?? 0}</strong></div></div>
+        </div>
+        <div className="sd-grid">
+          <div className="sd-card">
+            <h3>Quick Actions</h3>
+            <div className="sd-actions">
+              {[
+                { label: "Faculty Rooms", page: "Faculty Rooms" },
+                { label: "Student Directory", page: "Students" },
+                { label: "Notices", page: "Notices" },
+                { label: "Chat with Admin", page: "Chat" },
+              ].map((a) => (
+                <button key={a.label} className="sd-action" onClick={() => onNavigate(a.page)}>{a.label}</button>
+              ))}
+            </div>
           </div>
-          <div className="dashboard-card">
-            <h3>Rooms</h3>
-            <p>{fd?.rooms?.available ?? 0} available of {fd?.rooms?.total ?? 0} total</p>
-          </div>
-          <div className="dashboard-card">
-            <h3>Complaints</h3>
-            <p>{fd?.complaints?.pending ?? 0} pending, {fd?.complaints?.resolved ?? 0} resolved</p>
+          <div className="sd-card">
+            <h3>Recent Notices</h3>
+            {fd?.notices?.length ? fd.notices.map((n: any) => (
+              <div key={n.id} className="sd-notice"><strong>{n.title}</strong><p>{n.message}</p></div>
+            )) : <p className="sd-empty">No notices available.</p>}
           </div>
         </div>
-        <div className="dashboard-grid" style={{ marginTop: 16 }}>
-          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Faculty Rooms")}>
-            <h3>Faculty Rooms</h3>
-            <p>View rooms assigned to you.</p>
-          </div>
-          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Students")}>
-            <h3>Student Directory</h3>
-            <p>View student records (read-only).</p>
-          </div>
-          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Notices")}>
-            <h3>Notices & Announcements</h3>
-            <p>Read academic and hostel announcements.</p>
-          </div>
-          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Chat")}>
-            <h3>Chat with Admin</h3>
-            <p>Communicate with administration.</p>
-          </div>
-        </div>
-        {fd?.notices?.length ? (
-          <div className="dashboard-card" style={{ marginTop: 16 }}>
-            <div className="table-header"><div><h3>Recent Notices</h3><p>Latest announcements</p></div></div>
-            {fd.notices.map((n: any) => (
-              <div key={n.id} className="notice-card" style={{ boxShadow: "none" }}>
-                <div className="notice-icon"><Megaphone size={18} /></div>
-                <div><h4>{n.title}</h4><p>{n.message}</p><span className="notice-date">{n.date}</span></div>
-              </div>
-            ))}
-          </div>
-        ) : null}
       </section>
     );
   }
   if (role === "Student") {
     const user = getStoredUser();
     return (
-      <section className="content premium-page premium-dashboard">
-        <div className="page-heading admin-heading">
+      <section className="content premium-page premium-dashboard student-dashboard-premium">
+        <div className="sd-hero">
           <div>
-            <span className="admin-eyebrow">Student Panel</span>
-            <h2>Welcome, {user?.name || "Student"}</h2>
-            <p>Your personal hostel overview.</p>
+            <span className="sd-eyebrow">Student Panel</span>
+            <h1>Welcome back, {user?.name || "Student"}</h1>
+            <p>Your personal hostel overview and quick actions.</p>
           </div>
+          <div className="sd-date">{new Date().toLocaleDateString()}</div>
         </div>
-        <div className="dashboard-grid">
-          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("My Attendance")}>
-            <h3>My Attendance</h3><p>View your attendance history and percentage.</p>
+        <div className="sd-stats">
+          <div className="sd-stat"><div className="sd-stat-icon">💳</div><div><span>Pending Fees</span><strong>₹{Number(studentStats.feePending || 0).toLocaleString()}</strong></div></div>
+          <div className="sd-stat"><div className="sd-stat-icon">📋</div><div><span>Pending Leaves</span><strong>{studentStats.leaves}</strong></div></div>
+          <div className="sd-stat"><div className="sd-stat-icon">⚠️</div><div><span>Open Complaints</span><strong>{studentStats.complaints}</strong></div></div>
+          <div className="sd-stat"><div className="sd-stat-icon">🔧</div><div><span>Maintenance</span><strong>{studentStats.maintenance}</strong></div></div>
+        </div>
+        <div className="sd-grid">
+          <div className="sd-card">
+            <h3>Quick Actions</h3>
+            <div className="sd-actions">
+              {[
+                { label: "My Fees", page: "My Fees" },
+                { label: "Apply Leave", page: "Leave Management" },
+                { label: "Submit Complaint", page: "Complaints" },
+                { label: "Maintenance Request", page: "Maintenance Request" },
+                { label: "My Profile", page: "Profile" },
+                { label: "My Room", page: "Rooms" },
+              ].map((a) => (
+                <button key={a.label} className="sd-action" onClick={() => onNavigate(a.page)}>{a.label}</button>
+              ))}
+            </div>
           </div>
-          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Rooms")}>
-            <h3>My Room</h3><p>View your room details.</p>
-          </div>
-          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Leave Management")}>
-            <h3>Leave Applications</h3><p>Apply and track your leave requests.</p>
-          </div>
-          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Complaints")}>
-            <h3>Complaints</h3><p>Submit and track complaints.</p>
-          </div>
-          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Maintenance Request")}>
-            <h3>Maintenance</h3><p>Report maintenance issues.</p>
-          </div>
-          <div className="dashboard-card" style={{ cursor: "pointer" }} onClick={() => onNavigate("Notices")}>
-            <h3>Notices</h3><p>Read hostel announcements.</p>
+          <div className="sd-card">
+            <h3>Recent Notices</h3>
+            {studentStats.notices.length === 0 ? <p className="sd-empty">No notices available.</p> : studentStats.notices.map((n: any) => (
+              <div key={n.id} className="sd-notice"><strong>{n.title}</strong><p>{n.message}</p></div>
+            ))}
           </div>
         </div>
       </section>

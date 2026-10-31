@@ -473,3 +473,88 @@ CREATE TABLE IF NOT EXISTS timetable_entries (
   room_number VARCHAR(20) NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Fee Management (premium add-on)
+CREATE TABLE IF NOT EXISTS fee_categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL,
+  description TEXT NULL,
+  amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  frequency VARCHAR(20) NOT NULL DEFAULT 'Monthly',
+  due_day INT NULL,
+  late_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
+  active TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS student_fees (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NULL,
+  student_name VARCHAR(100) NOT NULL,
+  student_email VARCHAR(150) NULL,
+  room_number VARCHAR(10) NULL,
+  category_id INT NULL,
+  category_name VARCHAR(100) NULL,
+  amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  paid_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  due_date DATE NULL,
+  billing_period VARCHAR(50) NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'Pending',
+  discount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  late_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS fee_payments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  student_fee_id INT NULL,
+  user_id INT NULL,
+  student_name VARCHAR(100) NOT NULL,
+  student_email VARCHAR(150) NULL,
+  amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+  method VARCHAR(30) NOT NULL DEFAULT 'UPI',
+  transaction_ref VARCHAR(100) NOT NULL,
+  payment_date DATE NULL,
+  bank_reference VARCHAR(100) NULL,
+  proof_path TEXT NULL,
+  remarks TEXT NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'Pending Verification',
+  rejection_reason TEXT NULL,
+  verified_by INT NULL,
+  verified_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_transaction_ref (transaction_ref)
+);
+
+CREATE TABLE IF NOT EXISTS fee_receipts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  receipt_number VARCHAR(50) NOT NULL UNIQUE,
+  payment_id INT NOT NULL,
+  issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS fee_payment_settings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  account_holder VARCHAR(150) NULL,
+  bank_name VARCHAR(150) NULL,
+  account_number VARCHAR(60) NULL,
+  ifsc VARCHAR(20) NULL,
+  branch VARCHAR(150) NULL,
+  account_type VARCHAR(30) NULL,
+  upi_id VARCHAR(150) NULL,
+  qr_image_path TEXT NULL,
+  beneficiary_name VARCHAR(150) NULL,
+  instructions TEXT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS fee_audit_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  actor_id INT NULL,
+  actor_role VARCHAR(20) NULL,
+  action VARCHAR(80) NOT NULL,
+  entity VARCHAR(60) NULL,
+  entity_id INT NULL,
+  details TEXT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

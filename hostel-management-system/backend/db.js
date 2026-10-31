@@ -4,6 +4,7 @@ require("dotenv").config();
 const mysql = require("mysql2/promise");
 
 let mysqlPool = null;
+let mysqlFailed = false;
 let sqliteDb = null;
 let sqliteReady = false;
 
@@ -800,8 +801,103 @@ async function ensureFacultyRoleEnum(pool) {
   }
 }
 
-async function getPool() {
+async function ensureFeeManagementTables(pool) {
+  try {
+    await pool.query(`CREATE TABLE IF NOT EXISTS fee_categories (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      description TEXT NULL,
+      amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+      frequency VARCHAR(20) NOT NULL DEFAULT 'Monthly',
+      due_day INT NULL,
+      late_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
+      active TINYINT(1) NOT NULL DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS student_fees (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT NULL,
+      student_name VARCHAR(100) NOT NULL,
+      student_email VARCHAR(150) NULL,
+      room_number VARCHAR(10) NULL,
+      category_id INT NULL,
+      category_name VARCHAR(100) NULL,
+      amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+      paid_amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+      due_date DATE NULL,
+      billing_period VARCHAR(50) NULL,
+      status VARCHAR(30) NOT NULL DEFAULT 'Pending',
+      discount DECIMAL(10,2) NOT NULL DEFAULT 0,
+      late_fee DECIMAL(10,2) NOT NULL DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS fee_payments (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      student_fee_id INT NULL,
+      user_id INT NULL,
+      student_name VARCHAR(100) NOT NULL,
+      student_email VARCHAR(150) NULL,
+      amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+      method VARCHAR(30) NOT NULL DEFAULT 'UPI',
+      transaction_ref VARCHAR(100) NOT NULL,
+      payment_date DATE NULL,
+      bank_reference VARCHAR(100) NULL,
+      proof_path TEXT NULL,
+      remarks TEXT NULL,
+      status VARCHAR(30) NOT NULL DEFAULT 'Pending Verification',
+      rejection_reason TEXT NULL,
+      verified_by INT NULL,
+      verified_at TIMESTAMP NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS fee_receipts (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      receipt_number VARCHAR(50) NOT NULL UNIQUE,
+      payment_id INT NOT NULL,
+      issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS fee_payment_settings (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      account_holder VARCHAR(150) NULL,
+      bank_name VARCHAR(150) NULL,
+      account_number VARCHAR(60) NULL,
+      ifsc VARCHAR(20) NULL,
+      branch VARCHAR(150) NULL,
+      account_type VARCHAR(30) NULL,
+      upi_id VARCHAR(150) NULL,
+      qr_image_path TEXT NULL,
+      beneficiary_name VARCHAR(150) NULL,
+      instructions TEXT NULL,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS fee_audit_logs (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      actor_id INT NULL,
+      actor_role VARCHAR(20) NULL,
+      action VARCHAR(80) NOT NULL,
+      entity VARCHAR(60) NULL,
+      entity_id INT NULL,
+      details TEXT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+  } catch (e) {
+    console.warn("fee management tables migration skipped:", e.message);
+  }
+}
 
+async function ensureNotificationColumns(pool) {
+  try {
+    const [rows] = await pool.query(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='notifications'`);
+    const have = new Set(rows.map(r => String(r.COLUMN_NAME || Object.values(r)[0]).toLowerCase()));
+    if (!have.has("related_type")) await pool.query(`ALTER TABLE notifications ADD COLUMN related_type VARCHAR(50) NULL`);
+    if (!have.has("related_id")) await pool.query(`ALTER TABLE notifications ADD COLUMN related_id INT NULL`);
+  } catch (e) {
+    console.warn("notification columns migration skipped:", e.message);
+  }
+}
+
+async function getPool() {
+  if (mysqlFailed) return null;
   if (mysqlPool) return mysqlPool;
 
   mysqlPool = mysql.createPool({
@@ -831,6 +927,8 @@ async function getPool() {
     await ensureFacultyTables(mysqlPool);
     await ensureFacultyRoleEnum(mysqlPool);
     await ensureNotificationsTable(mysqlPool);
+    await ensureNotificationColumns(mysqlPool);
+    await ensureFeeManagementTables(mysqlPool);
     await ensureUserIdColumn(mysqlPool, "leave_requests");
     await ensureUserIdColumn(mysqlPool, "complaints");
     await ensureUserIdColumn(mysqlPool, "maintenance_requests");
@@ -839,6 +937,7 @@ async function getPool() {
   } catch (error) {
     console.warn("[db] MySQL unavailable; using SQLite fallback:", error.message);
     mysqlPool = null;
+    mysqlFailed = true;
     return null;
   }
 }
