@@ -230,6 +230,9 @@ app.use((err, req, res, next) => {
     const pool = await db.getPool();
     if (pool) {
       console.log("[db] Startup: MySQL pool connected successfully");
+    } else if (process.env.NODE_ENV === "production") {
+      console.error("[db] Startup: MySQL unavailable in production. Refusing to use SQLite fallback.");
+      process.exit(1);
     } else {
       console.warn("[db] Startup: MySQL unavailable; using SQLite fallback");
     }

@@ -900,7 +900,7 @@ async function getPool() {
   if (mysqlFailed) return null;
   if (mysqlPool) return mysqlPool;
 
-  mysqlPool = mysql.createPool({
+  const poolConfig = {
     host: process.env.DB_HOST || "localhost",
     port: parseInt(process.env.DB_PORT || "3306", 10),
     user: process.env.DB_USER || "root",
@@ -909,7 +909,25 @@ async function getPool() {
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
-  });
+  };
+
+  if (process.env.DB_SSL === "true") {
+    if (!process.env.DB_SSL_CA) {
+      if (process.env.NODE_ENV === "production") {
+        console.error("[db] DB_SSL is true but DB_SSL_CA is missing. Refusing to start without certificate verification.");
+        process.exit(1);
+      }
+      console.warn("[db] DB_SSL is true but DB_SSL_CA is missing; cannot connect securely.");
+      mysqlFailed = true;
+      return null;
+    }
+    poolConfig.ssl = {
+      ca: process.env.DB_SSL_CA,
+      rejectUnauthorized: true,
+    };
+  }
+
+  mysqlPool = mysql.createPool(poolConfig);
 
   try {
     await mysqlPool.query("SELECT 1 AS connected");
@@ -986,8 +1004,17 @@ const db = {
       try {
         return await pool.query(sql, params);
       } catch (error) {
-        // Fall back to the local SQLite store when MySQL is unreachable.
+        // Fall back to the local SQLite store when MySQL is unreachable (dev only).
+        if (process.env.NODE_ENV !== "production") {
+          // continue to sqlite fallback
+        } else {
+          throw error;
+        }
       }
+    }
+
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Database unavailable in production");
     }
 
     return querySqlite(sql, params);
