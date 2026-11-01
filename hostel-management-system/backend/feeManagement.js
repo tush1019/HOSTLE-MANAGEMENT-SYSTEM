@@ -104,7 +104,7 @@ router.post("/my/payments", authMiddleware, async (req, res) => {
 
 router.get("/my/payments", authMiddleware, async (req, res) => {
   try {
-    const [rows] = await db.query(`SELECT p.*, r.receipt_number FROM fee_payments p LEFT JOIN fee_receipts r ON r.payment_id=p.id WHERE p.user_id=? OR LOWER(p.student_email)=? ORDER BY p.created_at DESC`, [req.user.id, (req.user.email || "").toLowerCase()]);
+    const [rows] = await db.query(`SELECT * FROM fee_payments WHERE user_id=? OR LOWER(student_email)=? ORDER BY created_at DESC`, [req.user.id, (req.user.email || "").toLowerCase()]);
     res.json({ success: true, data: rows || [] });
   } catch (e) { res.status(500).json({ success: false, message: "Failed to load payments" }); }
 });

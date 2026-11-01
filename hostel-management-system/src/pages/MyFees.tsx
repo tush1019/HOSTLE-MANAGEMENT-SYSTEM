@@ -40,7 +40,7 @@ export default function MyFees() {
   return (
     <section className="page">
       <h2>My Fees</h2>
-      <div className="stats-grid">
+      <div className="stats-grid">`n        <div className="stat-card"><span>Pay Now</span><strong><button className="primary-btn" disabled={(overview?.pending||0)<=0} onClick={()=>document.getElementById("payment-form")?.scrollIntoView({behavior:"smooth"})}>Pay Now</button></strong></div>
         <div className="stat-card"><span>Total Assigned</span><strong>{formatINRFull(overview?.total || 0)}</strong></div>
         <div className="stat-card"><span>Total Paid</span><strong>{formatINRFull(overview?.paid || 0)}</strong></div>
         <div className="stat-card"><span>Pending</span><strong>{formatINRFull(overview?.pending || 0)}</strong></div>
@@ -75,7 +75,7 @@ export default function MyFees() {
           <div>{settings.instructions}</div>
         </div>
       )}
-    <h3>Submit Payment</h3>
+    <h3 id="payment-form">Submit Payment</h3>
       <PaymentForm fees={fees} onDone={load} />
 
       <h3>Payment History</h3>
