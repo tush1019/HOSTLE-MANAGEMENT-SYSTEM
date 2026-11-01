@@ -934,6 +934,7 @@ async function getPool() {
     await ensurePremiumRoomColumns(mysqlPool);
     await ensureUserProfileTable(mysqlPool);
     await ensureExtendedProfileColumns(mysqlPool);
+    await ensureRegistrationTables(mysqlPool);
     await ensureOtpProfileDataColumn(mysqlPool);
     await ensureAdminIdColumn(mysqlPool);
     await ensureFacultyIdColumn(mysqlPool);
@@ -1026,6 +1027,15 @@ const db = {
     return mysqlPool ? "mysql" : "sqlite";
   },
 };
+
+
+﻿async function ensureRegistrationTables(pool){
+ await pool.query("CREATE TABLE IF NOT EXISTS users (id INT AUTO_INCREMENT PRIMARY KEY,name VARCHAR(100) NOT NULL,email VARCHAR(150) NOT NULL UNIQUE,password VARCHAR(255) NOT NULL,role ENUM('Admin','Student','Faculty') NOT NULL DEFAULT 'Student',email_verified TINYINT(1) NOT NULL DEFAULT 0,admin_id VARCHAR(50) NULL,faculty_id VARCHAR(50) NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+ await pool.query("CREATE TABLE IF NOT EXISTS otp_verifications (id INT AUTO_INCREMENT PRIMARY KEY,email VARCHAR(150) NOT NULL,otp_hash VARCHAR(255) NOT NULL,name VARCHAR(100) NOT NULL,password_hash VARCHAR(255) NOT NULL,role ENUM('Admin','Student','Faculty') NOT NULL DEFAULT 'Student',profile_data TEXT NULL,attempts TINYINT NOT NULL DEFAULT 0,resend_count TINYINT NOT NULL DEFAULT 1,last_sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,expires_at TIMESTAMP NOT NULL,created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,UNIQUE KEY uq_otp_email (email),INDEX idx_otp_expires (expires_at))");
+ await pool.query("CREATE TABLE IF NOT EXISTS user_profiles (user_id INT NOT NULL PRIMARY KEY,email VARCHAR(255) NOT NULL UNIQUE,phone VARCHAR(30) NULL,bio TEXT NULL,address VARCHAR(255) NULL,profile_photo MEDIUMTEXT NULL,cover_photo MEDIUMTEXT NULL,mobile VARCHAR(30) NULL,parent_guardian_name VARCHAR(100) NULL,parent_guardian_mobile VARCHAR(30) NULL,course VARCHAR(100) NULL,year_semester VARCHAR(30) NULL,hostel VARCHAR(50) NULL,block VARCHAR(50) NULL,room_number VARCHAR(20) NULL,department VARCHAR(100) NULL,designation VARCHAR(100) NULL,emergency_contact VARCHAR(30) NULL,updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+ await pool.query("CREATE TABLE IF NOT EXISTS students (id INT AUTO_INCREMENT PRIMARY KEY,student_code VARCHAR(20) UNIQUE,name VARCHAR(100) NOT NULL,email VARCHAR(150) NULL,phone VARCHAR(20) NULL,course VARCHAR(100) NULL,room_number VARCHAR(10) NULL,status ENUM('Active','Pending','Inactive') NOT NULL DEFAULT 'Active',created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
+ console.log('[db] Verified registration tables');
+}
 
 module.exports = db;
 
