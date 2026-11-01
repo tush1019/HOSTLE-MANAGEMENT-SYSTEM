@@ -44,9 +44,12 @@ const ROOM_SELECT = `id, room_number AS room, floor, type, capacity,
 
 async function resolveStudentRoom(req) {
   try {
+    const [urows] = await db.query(`SELECT email FROM users WHERE id = ? LIMIT 1`, [req.user.id]);
+    const email = (urows && urows.length) ? String(urows[0].email || "").trim().toLowerCase() : String(req.user.email || "").trim().toLowerCase();
+    if (!email) return null;
     const [rows] = await db.query(
-      `SELECT room_number FROM students WHERE LOWER(email) = LOWER(?) LIMIT 1`,
-      [req.user.email]
+      `SELECT room_number FROM students WHERE LOWER(TRIM(email)) = ? LIMIT 1`,
+      [email]
     );
     if (rows && rows.length && rows[0].room_number) return rows[0].room_number;
   } catch (e) {}

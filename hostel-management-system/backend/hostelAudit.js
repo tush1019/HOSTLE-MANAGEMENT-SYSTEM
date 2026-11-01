@@ -16,9 +16,20 @@ async function resolveStudentId(name, email) {
 
 async function getStudentIdentity(user) {
   const ident = { id: null, email: user && user.email ? user.email : null, name: user && (user.name || user.email) ? (user.name || user.email) : null };
-  if (!user || !user.email) return ident;
+  if (!user) return ident;
   try {
-    const [rows] = await db.query("SELECT id, email, name FROM students WHERE LOWER(email) = LOWER(?) LIMIT 1", [user.email]);
+    // Use the authenticated user ID to fetch the authoritative email from users table,
+    // then look up the student record by that email.
+    let email = String(user.email || "").trim().toLowerCase();
+    if (user.id) {
+      const [urows] = await db.query("SELECT email FROM users WHERE id = ? LIMIT 1", [user.id]);
+      if (urows && urows.length && urows[0].email) {
+        email = String(urows[0].email).trim().toLowerCase();
+        ident.email = email;
+      }
+    }
+    if (!email) return ident;
+    const [rows] = await db.query("SELECT id, email, name FROM students WHERE LOWER(TRIM(email)) = ? LIMIT 1", [email]);
     if (rows && rows.length) { ident.id = rows[0].id; if (rows[0].email) ident.email = rows[0].email; if (rows[0].name) ident.name = rows[0].name; }
   } catch (e) {}
   return ident;

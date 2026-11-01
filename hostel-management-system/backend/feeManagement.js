@@ -109,6 +109,36 @@ router.get("/my/payments", authMiddleware, async (req, res) => {
   } catch (e) { res.status(500).json({ success: false, message: "Failed to load payments" }); }
 });
 
+// STUDENT FEE OVERVIEW — total assigned, paid, pending, overdue
+router.get("/my/overview", authMiddleware, async (req, res) => {
+  try {
+    const email = (req.user.email || "").toLowerCase();
+    const [fees] = await db.query(`SELECT * FROM student_fees WHERE LOWER(student_email) = ? OR user_id = ?`, [email, req.user.id]);
+    const [payments] = await db.query(`SELECT * FROM fee_payments WHERE user_id = ? OR LOWER(student_email) = ?`, [req.user.id, email]);
+    let totalAssigned = 0, pending = 0, overdue = 0, paid = 0;
+    const today = new Date().toISOString().slice(0, 10);
+    (fees || []).forEach((f) => {
+      const amt = Number(f.amount || 0) - Number(f.discount || 0) + Number(f.late_fee || 0);
+      totalAssigned += amt;
+      const rem = amt - Number(f.paid_amount || 0);
+      if (rem > 0) { pending += rem; if (f.due_date && f.due_date < today) overdue += rem; }
+      if (f.status === "Paid") paid += amt;
+    });
+    let verifiedCollection = 0;
+    (payments || []).forEach((p) => { if (p.status === "Verified") verifiedCollection += Number(p.amount || 0); });
+    res.json({ success: true, data: { totalAssigned, verifiedCollection, pending, overdue, paid, pendingSubmissions: (payments || []).filter((p) => p.status === "Pending Verification").length, rejectedPayments: (payments || []).filter((p) => p.status === "Rejected").length } });
+  } catch (e) { res.status(500).json({ success: false, message: "Failed to load fee overview" }); }
+});
+
+// STUDENT FEE RECORDS — assigned fees for this student
+router.get("/my/fees", authMiddleware, async (req, res) => {
+  try {
+    const email = (req.user.email || "").toLowerCase();
+    const [rows] = await db.query(`SELECT * FROM student_fees WHERE LOWER(student_email) = ? OR user_id = ? ORDER BY created_at DESC LIMIT 500`, [email, req.user.id]);
+    res.json({ success: true, data: rows || [] });
+  } catch (e) { res.status(500).json({ success: false, message: "Failed to load student fees" }); }
+});
+
 // ADMIN FEES
 router.get("/admin/fees", adminOnly, async (req, res) => {
   try {

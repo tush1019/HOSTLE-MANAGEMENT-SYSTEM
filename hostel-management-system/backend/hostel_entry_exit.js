@@ -1,6 +1,7 @@
 const express = require("express");
 const db = require("./db");
 const { authMiddleware, requireRole } = require("./middleware/auth");
+const { getStudentIdentity, writeAudit, ensureAuditTable } = require("./hostelAudit");
 
 const router = express.Router();
 router.use(authMiddleware);

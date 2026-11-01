@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getStoredUser } from "./lib/api";
+import { getStoredUser, setAuthFailureHandler } from "./lib/api";
 
 import Sidebar from "./components/Sidebar";
 import Navbar from "./components/Navbar";
@@ -81,6 +81,18 @@ function App() {
   const [activePage, setActivePage] = useState("Dashboard");
   const [globalSearch, setGlobalSearch] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Redirect to login on any 401 from a protected API call (expired/invalid token).
+  useEffect(() => {
+    setAuthFailureHandler(() => {
+      localStorage.removeItem("hostelRole");
+      localStorage.removeItem("hostelUser");
+      localStorage.removeItem("hostelToken");
+      setRole(null);
+      setPublicPage("Login");
+      setActivePage("Dashboard");
+    });
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem("hostelRole");

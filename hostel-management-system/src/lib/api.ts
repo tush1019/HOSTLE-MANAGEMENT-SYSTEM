@@ -7,6 +7,23 @@ type ApiOptions = {
   body?: unknown;
 };
 
+/* Optional callback invoked when a protected request receives a 401.
+   Pages can set this via api.setAuthFailureHandler(...) to redirect to login. */
+let onAuthFailure: (() => void) | null = null;
+
+export function setAuthFailureHandler(handler: () => void) {
+  onAuthFailure = handler;
+}
+
+async function handleAuthFailure(responseStatus: number) {
+  if (responseStatus === 401) {
+    localStorage.removeItem("hostelToken");
+    localStorage.removeItem("hostelRole");
+    localStorage.removeItem("hostelUser");
+    if (onAuthFailure) onAuthFailure();
+  }
+}
+
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: options.method || "GET",
@@ -24,11 +41,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     }
   }
 
-  if (response.status === 401) {
-    localStorage.removeItem("hostelToken");
-    localStorage.removeItem("hostelRole");
-    localStorage.removeItem("hostelUser");
-  }
+  await handleAuthFailure(response.status);
   if (!response.ok || data?.success === false) {
     throw new Error(data?.message || `Request failed (${response.status})`);
   }
@@ -60,11 +73,7 @@ export async function apiRaw<T>(path: string, options: ApiOptions = {}): Promise
     }
   }
 
-  if (response.status === 401) {
-    localStorage.removeItem("hostelToken");
-    localStorage.removeItem("hostelRole");
-    localStorage.removeItem("hostelUser");
-  }
+  await handleAuthFailure(response.status);
   if (!response.ok || data?.success === false) {
     throw new Error(data?.message || `Request failed (${response.status})`);
   }

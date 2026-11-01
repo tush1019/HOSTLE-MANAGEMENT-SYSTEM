@@ -7,13 +7,19 @@ const router = express.Router();
 const adminOnly = [authMiddleware, requireRole("Admin")];
 async function resolveStudentName(req) {
   try {
+    // Use the authenticated user ID to fetch the authoritative email from users table,
+    // then look up the student record by that email. This avoids mismatches when
+    // the JWT email differs from the students table email.
+    const [urows] = await db.query(`SELECT email FROM users WHERE id = ? LIMIT 1`, [req.user.id]);
+    const email = (urows && urows.length) ? String(urows[0].email || "").trim().toLowerCase() : String(req.user.email || "").trim().toLowerCase();
+    if (!email) return req.user.name || "Unknown";
     const [rows] = await db.query(
-      `SELECT name FROM students WHERE LOWER(email) = LOWER(?) LIMIT 1`,
-      [req.user.email]
+      `SELECT name FROM students WHERE LOWER(TRIM(email)) = ? LIMIT 1`,
+      [email]
     );
     if (rows && rows.length) return rows[0].name;
   } catch (e) {}
-  return req.user.email || req.user.name || "Unknown";
+  return req.user.name || "Unknown";
 }
 
 

@@ -14,7 +14,7 @@ async function safe(label, fn, fallback) {
   }
 }
 
-router.get("/", requireRole("Admin"), async (req, res) => {
+router.get("/", requireRole("Admin", "Student", "Faculty"), async (req, res) => {
   try {
     const students = await safe("students", async () => {
       const [rows] = await db.query(`SELECT COUNT(*) AS total, SUM(status = 'Active') AS active FROM students`);
@@ -61,10 +61,14 @@ router.get("/", requireRole("Admin"), async (req, res) => {
       return rows || [];
     }, []);
 
-    const recentFees = await safe("recentFees", async () => {
+    // recentFees contains individual student names and amounts — Admin only
+    let recentFees = [];
+    if (req.user.role === "Admin") {
+      recentFees = await safe("recentFees", async () => {
       const [rows] = await db.query(`SELECT payment_code AS code, student_name AS student, amount, status FROM fees ORDER BY created_at DESC LIMIT 5`);
       return rows || [];
-    }, []);
+      }, []);
+    }
 
     const notices = await safe("notices", async () => {
       const [rows] = await db.query(`SELECT id, title, message, DATE_FORMAT(created_at, '%d %b %Y') AS date FROM notices ORDER BY created_at DESC LIMIT 5`);
@@ -91,3 +95,4 @@ router.get("/", requireRole("Admin"), async (req, res) => {
 });
 
 module.exports = router;
+
