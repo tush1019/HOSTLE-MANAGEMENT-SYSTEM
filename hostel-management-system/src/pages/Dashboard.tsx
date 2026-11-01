@@ -10,10 +10,10 @@ import "../dashboard-premium.css";
 import "../dashboard-student-faculty-premium.css";
 
 type D = {
-  students: { total: number; active: number };
-  rooms: { total: number; occupied: number; available: number; maintenance: number; boys: number; girls: number; beds: number; bedsFilled: number; occupancyRate: number };
-  fees: { paid: number; pending: number; paidCount: number; pendingCount: number };
-  complaints: { total: number; pending: number; inProgress: number; resolved: number };
+  students: { total: number; active: number; unavailable?: boolean };
+  rooms: { total: number; occupied: number; available: number; maintenance: number; boys: number; girls: number; beds: number; bedsFilled: number; occupancyRate: number; unavailable?: boolean };
+  fees: { paid: number; pending: number; paidCount: number; pendingCount: number; unavailable?: boolean };
+  complaints: { total: number; pending: number; inProgress: number; resolved: number; unavailable?: boolean };
   monthlyFees: { month: string; amount: number }[];
   recentComplaints: { code: string; student: string; subject: string; status: string }[];
   recentFees: { code: string; student: string; amount: number; status: string }[];

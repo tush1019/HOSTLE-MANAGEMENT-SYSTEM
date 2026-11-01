@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { api, apiRaw } from "../lib/api";
 import { formatINRFull } from "../lib/format";
 import { useToast } from "../components/Toast";
@@ -11,18 +11,19 @@ export default function FeeManagement() {
   const [selected, setSelected] = useState<number[]>([]);
   const [search, setSearch] = useState("");
   const [amount, setAmount] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const load = async () => {
     try {
       const [ov, ps] = await Promise.all([
         apiRaw<any>("/fee-management/admin/overview"),
-        apiRaw<any>("/fee-management/admin/payments"),
+        apiRaw<any>("/fee-management/admin/payments" + (statusFilter ? `?status=${encodeURIComponent(statusFilter)}` : "")),
       ]);
       setOverview(ov.data);
       setPayments(ps.data || []);
     } catch (e) { notify(e instanceof Error ? e.message : "Failed", "error"); }
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [statusFilter]);
 
   const searchStudents = async () => {
     const data = await apiRaw<any>(`/fee-management/admin/students/search?q=${encodeURIComponent(search)}`);
@@ -32,6 +33,7 @@ export default function FeeManagement() {
   const assign = async () => {
     const chosen = students.filter((s) => selected.includes(s.id)).map((s) => ({ userId: s.id, name: s.name, email: s.email, room: s.room_number }));
     if (!chosen.length) { notify("Select students", "error"); return; }
+    if (!amount || Number(amount) <= 0) { notify("Enter a valid amount", "error"); return; }
     try {
       await api("/fee-management/admin/assign", { method: "POST", body: { students: chosen, amount: Number(amount) } });
       notify("Fees assigned");
@@ -40,7 +42,8 @@ export default function FeeManagement() {
   };
 
   const verify = async (id: number) => {
-    try { await api(`/fee-management/admin/payments/${id}/verify`, { method: "POST" }); notify("Verified"); load(); }
+    if (!window.confirm("Verify this payment?")) return;
+    try { const r = await api<any>(`/fee-management/admin/payments/${id}/verify`, { method: "POST" }); notify("Verified" + (r?.data?.receiptNumber ? ` - ${r.data.receiptNumber}` : "")); load(); }
     catch (e) { notify(e instanceof Error ? e.message : "Failed", "error"); }
   };
   const reject = async (id: number) => {
@@ -51,7 +54,7 @@ export default function FeeManagement() {
 
   return (
     <section className="page">
-      <h2>Fee Management</h2>
+      <h2>Premium Fee Management</h2>
       {overview && (
         <div className="stats-grid">
           <div className="stat-card"><span>Total Assigned</span><strong>{formatINRFull(overview.totalAssigned)}</strong></div>
@@ -63,8 +66,8 @@ export default function FeeManagement() {
         </div>
       )}
 
-      <h3>Assign Fees</h3>
       <div className="card">
+        <h3>Add Fee</h3>
         <input placeholder="Search students" value={search} onChange={(e) => setSearch(e.target.value)} />
         <button onClick={searchStudents}>Search</button>
         <input type="number" placeholder="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} />
@@ -81,31 +84,41 @@ export default function FeeManagement() {
         <button onClick={assign}>Assign Selected</button>
       </div>
 
-      <h3>Payment Verification Queue</h3>
-      <table className="data-table">
-        <thead><tr><th>Student</th><th>Amount</th><th>Method</th><th>Ref</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody>
-          {payments.map((p) => (
-            <tr key={p.id}>
-              <td>{p.student_name}</td>
-              <td>{formatINRFull(p.amount)}</td>
-              <td>{p.method}</td>
-              <td>{p.transaction_ref}</td>
-              <td>{p.status}</td>
-              <td>
-                {p.status === "Pending Verification" && (
-                  <>
-                    <button onClick={() => verify(p.id)}>Verify</button>
-                    <button onClick={() => reject(p.id)}>Reject</button>
-                  </>
-                )}
-                {p.receipt_number && <span>{p.receipt_number}</span>}
-              </td>
-            </tr>
-          ))}
-          {!payments.length && <tr><td colSpan={6}>No payments</td></tr>}
-        </tbody>
-      </table>
+      <div className="card">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3>Payment Verification Queue</h3>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="">All</option>
+            <option value="Pending Verification">Pending Verification</option>
+            <option value="Verified">Verified</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+        <table className="data-table">
+          <thead><tr><th>Student</th><th>Amount</th><th>Method</th><th>Ref</th><th>Status</th><th>Receipt</th><th>Actions</th></tr></thead>
+          <tbody>
+            {payments.map((p) => (
+              <tr key={p.id}>
+                <td>{p.student_name}</td>
+                <td>{formatINRFull(p.amount)}</td>
+                <td>{p.method}</td>
+                <td>{p.transaction_ref}</td>
+                <td>{p.status}</td>
+                <td>{p.receipt_number || "-"}</td>
+                <td>
+                  {p.status === "Pending Verification" && (
+                    <>
+                      <button onClick={() => verify(p.id)}>Verify</button>
+                      <button onClick={() => reject(p.id)}>Reject</button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+            {!payments.length && <tr><td colSpan={7}>No payments</td></tr>}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
