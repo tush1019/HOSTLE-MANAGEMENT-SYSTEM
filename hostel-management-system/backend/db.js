@@ -1027,6 +1027,79 @@ const db = {
     return mysqlPool ? "mysql" : "sqlite";
   },
 };
+db.ensureNoticesTable = async function(pool) {
+  await pool.query(`CREATE TABLE IF NOT EXISTS notices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    audience TEXT NOT NULL DEFAULT 'All' CHECK (audience IN ('All', 'Students', 'Admins')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`);
+  console.log('[db] Ensure notices table created');
+};
+
+db.ensureLeaveRequestsTable = async function(pool) {
+  await pool.query(`CREATE TABLE IF NOT EXISTS leave_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    leave_code VARCHAR(191) UNIQUE,
+    student_name TEXT NOT NULL,
+    room_number TEXT NULL,
+    reason TEXT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Approved', 'Rejected')),
+    admin_remarks TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`);
+  console.log('[db] Ensure leave_requests table created');
+};
+
+db.ensureComplaintsTable = async function(pool) {
+  await pool.query(`CREATE TABLE IF NOT EXISTS complaints (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    complaint_code VARCHAR(191) UNIQUE,
+    student_name TEXT NOT NULL,
+    room_number TEXT NULL,
+    subject TEXT NOT NULL,
+    description TEXT NULL,
+    complaint_date DATE NOT NULL,
+    priority TEXT NOT NULL DEFAULT 'Medium' CHECK (priority IN ('Low', 'Medium', 'High')),
+    status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'In Progress', 'Resolved')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`);
+  console.log('[db] Ensure complaints table created');
+};
+
+db.ensureMaintenanceRequestsTable = async function(pool) {
+  await pool.query(`CREATE TABLE IF NOT EXISTS maintenance_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    request_code VARCHAR(191) UNIQUE,
+    student_name TEXT NOT NULL,
+    room_number TEXT NULL,
+    title TEXT NOT NULL,
+    description TEXT NULL,
+    photo TEXT NULL,
+    priority TEXT NOT NULL DEFAULT 'Medium' CHECK (priority IN ('Low', 'Medium', 'High')),
+    status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'In Progress', 'Resolved')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`);
+  console.log('[db] Ensure maintenance_requests table created');
+};
+
+db.ensureHostelServicesTable = async function(pool) {
+  await pool.query(`CREATE TABLE IF NOT EXISTS hostel_services (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    category TEXT NOT NULL DEFAULT 'General' CHECK (category IN ('Emergency Contact','Medical Facilities','WiFi Information','Laundry Services','Study Room','Water & Electricity','Housekeeping','Entry & Exit Rules')),
+    title TEXT NOT NULL,
+    details TEXT NULL,
+    contact_name TEXT NULL,
+    contact_phone TEXT NULL,
+    photo TEXT NULL,
+    status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active','Inactive')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  )`);
+  console.log('[db] Ensure hostel_services table created');
+};
 
 
 ﻿async function ensureRegistrationTables(pool){

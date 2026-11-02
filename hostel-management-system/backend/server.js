@@ -230,6 +230,11 @@ app.use((err, req, res, next) => {
     const pool = await db.getPool();
     if (pool) {
       console.log("[db] Startup: MySQL pool connected successfully");
+await db.ensureNoticesTable(pool);
+    await db.ensureLeaveRequestsTable(pool);
+    await db.ensureComplaintsTable(pool);
+    await db.ensureMaintenanceRequestsTable(pool);
+    await db.ensureHostelServicesTable(pool);
     } else if (process.env.NODE_ENV === "production") {
       console.error("[db] Startup: MySQL unavailable in production. Refusing to use SQLite fallback.");
       process.exit(1);
@@ -237,7 +242,8 @@ app.use((err, req, res, next) => {
       console.warn("[db] Startup: MySQL unavailable; using SQLite fallback");
     }
   } catch (error) {
-    console.warn("[db] Startup: database initialization failed:", error.message);
+    console.error("[db] Startup: database initialization failed:", error.message);
+    process.exit(1);
   }
 
   app.listen(PORT, "0.0.0.0", () => {
