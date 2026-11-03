@@ -390,9 +390,10 @@ router.post("/verify", authRateLimit, async (req, res) => {
 
     const run = (sql, params) => useTransaction ? connection.query(sql, params) : db.query(sql, params);
 
+    const hashedPassword = await hashValue(passwordHash);
     const [result] = await run(
       `INSERT INTO users (name, email, password, role, email_verified) VALUES (?, ?, ?, ?, 1)`,
-      [cleanName, cleanEmail, passwordHash, userRole]
+      [cleanName, cleanEmail, hashedPassword, userRole]
     );
     const userId = result.insertId;
 
