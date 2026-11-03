@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 -- Hostel staff / faculty management
 CREATE TABLE IF NOT EXISTS staff (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  staff_code VARCHAR(20) UNIQUE,
   name VARCHAR(100) NOT NULL,
   email VARCHAR(150) NULL,
   phone VARCHAR(20) NULL,
