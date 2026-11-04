@@ -1,0 +1,14 @@
+◇ injected env (23) from .env // tip: ◈ secrets for agents [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+[startup] Environment check: {
+  NODE_ENV: 'development',
+  JWT_SECRET: 'present',
+  JWT_EXPIRES: 'present',
+  ADMIN_PASSKEY: 'present',
+  FACULTY_SIGNUP_KEY: 'present',
+  DB_HOST: 'present',
+  DB_USER: 'present',
+  DB_NAME: 'present',
+  PORT: '5000'
+}
+HostelHub Backend running on port 5000

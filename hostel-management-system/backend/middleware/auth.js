@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken");
+﻿const jwt = require("jsonwebtoken");
 const db = require("../db");
 
 const NODE_ENV = process.env.NODE_ENV || "development";
@@ -40,18 +40,17 @@ async function authMiddleware(req, res, next) {
   const auth = req.headers.authorization || "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
 
-  // 1. JWT Bearer token (preferred when available)
   if (token) {
     try {
       const decoded = jwt.verify(token, SECRET);
       req.user = decoded;
       return next();
     } catch (err) {
+      console.error("[auth] JWT verify failed:", err && err.name);
       return res.status(401).json({ success: false, message: "Invalid or expired token" });
     }
   }
 
-  // 2. Stateless session via headers sent by the frontend (x-user-id / x-user-email)
   const user = await resolveUserFromHeaders(req);
   if (user) {
     req.user = user;

@@ -1,0 +1,18 @@
+[db] MySQL unavailable; using SQLite fallback: 
+[db] Startup: MySQL unavailable; using SQLite fallback
+Staff list error: Error: no such column: staff_code
+    at e.handleError (C:\Users\tusha\OneDrive\Desktop\HOSTEL MANAGEMENT SYSTEM\hostel-management-system\backend\node_modules\sql.js\dist\sql-wasm.js:90:226)
+    at e.tb (C:\Users\tusha\OneDrive\Desktop\HOSTEL MANAGEMENT SYSTEM\hostel-management-system\backend\node_modules\sql.js\dist\sql-wasm.js:88:472)
+    at querySqlite (C:\Users\tusha\OneDrive\Desktop\HOSTEL MANAGEMENT SYSTEM\hostel-management-system\backend\db.js:974:26)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+Staff list error: Error: no such column: staff_code
+    at e.handleError (C:\Users\tusha\OneDrive\Desktop\HOSTEL MANAGEMENT SYSTEM\hostel-management-system\backend\node_modules\sql.js\dist\sql-wasm.js:90:226)
+    at e.tb (C:\Users\tusha\OneDrive\Desktop\HOSTEL MANAGEMENT SYSTEM\hostel-management-system\backend\node_modules\sql.js\dist\sql-wasm.js:88:472)
+    at querySqlite (C:\Users\tusha\OneDrive\Desktop\HOSTEL MANAGEMENT SYSTEM\hostel-management-system\backend\db.js:974:26)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+Staff list error: Error: no such column: staff_code
+    at e.handleError (C:\Users\tusha\OneDrive\Desktop\HOSTEL MANAGEMENT SYSTEM\hostel-management-system\backend\node_modules\sql.js\dist\sql-wasm.js:90:226)
+    at e.tb (C:\Users\tusha\OneDrive\Desktop\HOSTEL MANAGEMENT SYSTEM\hostel-management-system\backend\node_modules\sql.js\dist\sql-wasm.js:88:472)
+    at querySqlite (C:\Users\tusha\OneDrive\Desktop\HOSTEL MANAGEMENT SYSTEM\hostel-management-system\backend\db.js:974:26)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+OTP send failed: fetch failed

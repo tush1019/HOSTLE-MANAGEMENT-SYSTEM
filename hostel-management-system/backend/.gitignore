@@ -1,0 +1,11 @@
+# Ignore Aiven local config (contains real credentials)
+.env.aiven.local
+
+# Ignore local .env with real secrets (if it contains passwords)
+.env
+
+# Ignore node_modules
+node_modules/
+
+# Ignore logs
+*.log

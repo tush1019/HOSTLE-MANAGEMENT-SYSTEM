@@ -136,8 +136,9 @@ class Hostel:
             raise ValueError(f"Room {room_number} is full.")
         if student_id is None:
             student_id = self._generate_student_id()
-        if student_id in self.students:
-            raise ValueError(f"Student {student_id} already exists.")
+        # Allow re-adding a student who checked out (exists in self.students but not checked in)
+        if student_id in self.students and self.students[student_id].checked_in:
+            raise ValueError(f"Student {student_id} already exists and is checked in.")
         student = Student(
             student_id=student_id,
             name=name,
@@ -151,7 +152,15 @@ class Hostel:
 
     def _generate_student_id(self) -> str:
         next_number = len(self.students) + 1
-        return f"STU{next_number:04d}"
+        # Find the next available ID, skipping any that are already in use
+        # (including by checked-out students who still exist in self.students)
+        max_attempts = len(self.students) + 100  # safety limit
+        for _ in range(max_attempts):
+            candidate = f"STU{next_number:04d}"
+            if candidate not in self.students:
+                return candidate
+            next_number += 1
+        raise ValueError("Unable to generate a unique student ID - too many students.")
 
     def get_student(self, student_id: str) -> Student:
         try:
